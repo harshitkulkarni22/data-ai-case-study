@@ -14,23 +14,34 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     
     <style>
-        /* Custom styles inspired by the screenshot */
+        /* Custom styles */
         body {
             font-family: 'Inter', sans-serif;
             /* Dark blue/black background */
             background-color: #05080f; 
-            /* Moon-like theme inspired by screenshot - Raised again */
+            /* --- ADDED: Half-moon gradient --- */
             background-image: 
                 /* The bright, sharp arc (the "partition") */
                 radial-gradient(ellipse 80% 40% at 50% 105%, rgba(230, 230, 255, 0.35) 0%, transparent 70%),
                 /* The softer, wider atmospheric glow */
                 radial-gradient(ellipse 120% 50% at 50% 107%, rgba(180, 180, 200, 0.15) 0%, transparent 100%);
             background-repeat: no-repeat;
-            background-attachment: fixed;
-            overflow-x: hidden; /* Prevent horizontal scroll from graph */
+            background-attachment: fixed; /* Sticks to the viewport */
+            /* --- End of addition --- */
+            overflow-x: hidden; /* Prevent horizontal scroll */
         }
 
-        /* Subtle starry background effect - NOW ANIMATED */
+        /* --- Sine Wave Canvas Background --- */
+        #sine-wave-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10; /* Farthest back layer */
+        }
+        
+        /* --- RE-ADDED: Starry Background --- */
         @keyframes moveStars {
           from { background-position: 0 0; }
           /* Move diagonally */
@@ -43,14 +54,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -10;
+            z-index: -5; /* On top of waves, behind content */
             /* Layer 1: Small, slow stars */
             background-image: radial-gradient(1px 1px at 50px 100px, white, transparent),
                               radial-gradient(0.5px 0.5px at 150px 200px, rgba(255,255,255,0.5), transparent);
             background-size: 300px 300px; 
             background-position: 0 0;
             opacity: 0.7;
-            animation: moveStars 50s linear infinite; /* Sped up */
+            animation: moveStars 50s linear infinite;
         }
 
         .stars::before {
@@ -66,7 +77,7 @@
             background-size: 250px 250px;
             background-position: 0 0;
             opacity: 0.8;
-            animation: moveStars 37.5s linear infinite; /* Sped up */
+            animation: moveStars 37.5s linear infinite;
         }
 
         .stars::after {
@@ -81,13 +92,12 @@
                               radial-gradient(2px 2px at 175px 250px, rgba(255,255,255,0.7), transparent);
             background-size: 200px 200px;
             background-position: 0 0;
-            animation: moveStars 25s linear infinite; /* Sped up */
+            animation: moveStars 25s linear infinite;
         }
-
 
         /* Custom glassmorphism-style for cards */
         .glass-card {
-            background: rgba(17, 24, 39, 0.5); /* Semi-transparent dark bg */
+            background: rgba(17, 24, 39, 0.25); /* Made even more transparent (was 0.35) */
             backdrop-filter: blur(10px);
             border: 1px solid rgba(55, 65, 81, 0.3);
         }
@@ -130,17 +140,36 @@
             cursor: grabbing; /* Grabbing cursor when panning */
         }
 
+        /* --- Pulsing Glow --- */
+        @keyframes pulse-glow {
+            0%, 100% {
+                filter: drop-shadow(0 0 3px #fff);
+            }
+            50% {
+                filter: drop-shadow(0 0 10px #fff);
+            }
+        }
+
         .skill-graph-links line {
             stroke: #6b7280; /* gray-500 */
             stroke-opacity: 0.4;
-            transition: stroke-opacity 0.2s ease;
+            /* --- Transitions --- */
+            transition: stroke-opacity 0.2s ease, stroke-width 0.2s ease;
         }
 
         .skill-graph-nodes circle {
             stroke: #e5e7eb; /* gray-200 */
             stroke-width: 1.5px;
-            transition: opacity 0.2s ease, transform 0.1s ease;
+            /* --- Transitions (NO TRANSFORM) --- */
+            transition: opacity 0.2s ease, r 0.2s ease; /* STUTTER FIX */
             cursor: pointer; /* Change cursor for nodes */
+            /* --- Glow Effect --- */
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
+        }
+
+        /* --- Pulsing Main Node --- */
+        .skill-graph-nodes circle.level-0-node {
+            animation: pulse-glow 2.5s infinite ease-in-out;
         }
 
         .skill-graph-labels text {
@@ -148,13 +177,17 @@
             font-size: 10px;
             font-weight: 500;
             pointer-events: none; /* Make text non-interactive */
-            transition: opacity 0.2s ease;
+            /* --- Transitions (NO TRANSFORM) --- */
+            transition: opacity 0.2s ease, font-size 0.2s ease, dx 0.2s ease; /* STUTTER FIX */
+            /* --- Glow Effect --- */
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
         }
         
         .skill-graph-labels text.level-0 {
             font-size: 16px;
             font-weight: 700;
             fill: #fff;
+            animation: pulse-glow 2.5s infinite ease-in-out;
         }
         .skill-graph-labels text.level-1 {
             font-size: 12px;
@@ -165,7 +198,8 @@
 </head>
 <body class="text-gray-300 antialiased">
 
-    <!-- Starry background element -->
+    <!-- Background Layers -->
+    <canvas id="sine-wave-bg"></canvas>
     <div class="stars"></div>
 
     <!-- Main container -->
@@ -178,7 +212,7 @@
                     Harshit Kulkarni
                 </h1>
                 <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-8">
-                    Data Science Lead - presentation
+                    Data Science Lead & AI Strategist
                 </p>
             </header>
             
@@ -209,7 +243,7 @@
                 Technical Expertise
             </h2>
 
-            <!-- NEW: Toggle Button -->
+            <!-- Toggle Button -->
             <div class="text-center mb-8">
                 <button id="toggle-skill-view" class="py-2 px-4 bg-gray-700 text-gray-200 rounded-lg text-sm hover:bg-gray-600 transition-all">
                     Show List View
@@ -319,10 +353,11 @@
             </div>
 
             <!-- Tab Content Panels -->
-            <div class="mt-8">
+            <div class="mt-8 relative"> <!-- Added relative positioning for children -->
                 
                 <!-- Panel 1: Transitioning to Predictive Analytics & AI -->
-                <div id="tab-transition" role="tabpanel" class="space-y-8">
+                <!-- Added transition classes, removed 'hidden' by default -->
+                <div id="tab-transition" role="tabpanel" class="space-y-8 transition-opacity duration-300">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Team Upskilling & Knowledge Transfer</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
@@ -342,7 +377,8 @@
                 </div>
                 
                 <!-- Panel 2: Prioritizing Initiatives for Business Value -->
-                <div id="tab-value" role="tabpanel" class="hidden space-y-8">
+                <!-- Added transition classes and opacity-0 -->
+                <div id="tab-value" role="tabpanel" class="hidden space-y-8 transition-opacity duration-300 opacity-0">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Immediate Cost Optimization</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
@@ -368,7 +404,8 @@
                 </div>
 
                 <!-- Panel 3: Collaboration for Adoption and Success -->
-                <div id="tab-collaboration" role="tabpanel" class="hidden space-y-8">
+                <!-- Added transition classes and opacity-0 -->
+                <div id="tab-collaboration" role="tabpanel" class="hidden space-y-8 transition-opacity duration-300 opacity-0">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Proactive Stakeholder Management</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
@@ -390,7 +427,8 @@
                 </div>
 
                 <!-- Panel 4: Proactively Tackling Team Challenges -->
-                <div id="tab-challenges" role="tabpanel" class="hidden space-y-8">
+                <!-- Added transition classes and opacity-0 -->
+                <div id="tab-challenges" role="tabpanel" class="hidden space-y-8 transition-opacity duration-300 opacity-0">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Challenge: Team Upskilling & Adopting New Tech</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
@@ -419,26 +457,69 @@
 
     </div>
 
-    <!-- JavaScript for Tabs, Graph, and Toggles -->
+    <!-- JavaScript for Tabs, Graph, Toggles, and Sine Waves -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             
-            // --- 1. JAVASCRIPT FOR TABS ---
+            // --- 1. JAVASCRIPT FOR TABS (WITH FADE TRANSITION) ---
             const tabs = document.querySelectorAll('[data-tab-target]');
             const tabContents = document.querySelectorAll('[role="tabpanel"]');
+            let activeTab = tabs[0];
+            let activePanel = activeTab ? document.querySelector(activeTab.dataset.tabTarget) : null;
+
+            // Set initial active styles
+            if (activeTab) {
+                activeTab.classList.add('active', 'text-blue-500', 'border-blue-500');
+                activeTab.classList.remove('text-gray-400', 'border-transparent');
+            }
+            if (activePanel) {
+                // Ensure initial panel is visible
+                activePanel.classList.remove('hidden', 'opacity-0');
+            }
 
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
+                    if (tab === activeTab) return; // Do nothing if clicking the same tab
+
                     const target = document.querySelector(tab.dataset.tabTarget);
-                    tabContents.forEach(tc => tc.classList.add('hidden'));
-                    if (target) target.classList.remove('hidden');
+                    if (!target) return;
+
+                    // 1. Fade out the current panel
+                    if (activePanel) {
+                        activePanel.classList.add('opacity-0');
+                    }
+
+                    // 2. Set timeout to switch panels
+                    setTimeout(() => {
+                        // 3. Hide old panel
+                        if (activePanel) {
+                            activePanel.classList.add('hidden');
+                        }
+
+                        // 4. Show new panel (it's already opacity-0)
+                        target.classList.remove('hidden');
+
+                        // 5. Force a reflow (important!)
+                        // Reading a property like offsetHeight forces the browser to apply the 'hidden' removal
+                        target.offsetHeight; 
+
+                        // 6. Fade in new panel
+                        target.classList.remove('opacity-0');
+                        
+                        // 7. Update active tab/panel trackers
+                        activeTab = tab;
+                        activePanel = target;
+
+                    }, 300); // Must match the transition duration (300ms)
+
+                    // 8. Update tab button styles
                     tabs.forEach(t => t.classList.remove('active', 'text-blue-500', 'border-blue-500'));
                     tabs.forEach(t => t.classList.add('text-gray-400', 'border-transparent'));
                     tab.classList.add('active', 'text-blue-500', 'border-blue-500');
                     tab.classList.remove('text-gray-400', 'border-transparent');
                 });
             });
-            if (tabs.length > 0) tabs[0].click();
+            // --- END OF TAB SCRIPT ---
 
 
             // --- 2. JAVASCRIPT FOR KNOWLEDGE GRAPH ---
@@ -479,6 +560,11 @@
             const svg = d3.select("#skill-graph");
             const container = document.getElementById("skill-graph-container");
             let simulation; // Make simulation accessible to redraw
+            let link, node, text; // Make graph elements globally accessible within this scope
+            let focusedNode = null; // For click-to-focus
+            let allNodes = [];
+            let allLinks = [];
+            let zoom; // Make zoom accessible
 
             // Fullscreen Elements
             const toggleButton = document.getElementById('fullscreen-toggle');
@@ -493,7 +579,6 @@
                 iconMinimize.classList.toggle('hidden', !isFullscreen);
                 
                 // Redraw graph to fit new dimensions
-                // A short delay allows the container to resize first
                 setTimeout(drawGraph, 50); 
             });
 
@@ -515,11 +600,15 @@
                     g.attr("transform", event.transform);
                 };
 
-                const zoom = d3.zoom()
+                zoom = d3.zoom()
                     .scaleExtent([0.1, 8]) 
                     .on("zoom", zoomed);
                 
-                svg.call(zoom);
+                // Add click to background to un-focus
+                svg.call(zoom).on("click", () => {
+                    focusedNode = null;
+                    unhighlight();
+                });
 
                 // --- Data Processing ---
                 const nodes = [];
@@ -539,8 +628,6 @@
                     category.children.forEach(skill => {
                         let skillNode = nodes.find(n => n.id === skill);
                         if (!skillNode) {
-                            // --- FIX WAS HERE ---
-                            // Changed groupG to groupIndex
                             skillNode = { id: skill, group: groupIndex, level: 2 }; 
                             nodes.push(skillNode);
                         }
@@ -549,36 +636,43 @@
                     groupIndex++;
                 });
 
+                allNodes = nodes; // Save for interactions
+                allLinks = links; // Save for interactions
+
                 // --- Color Scale ---
                 const color = d3.scaleOrdinal(d3.schemeTableau10);
 
                 // --- Force Simulation ---
-                // Re-initialize or update simulation
                 simulation = d3.forceSimulation(nodes)
                     .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.source.level === 0 ? 180 : 80))
-                    .force("charge", d3.forceManyBody().strength(d => d.level === 0 ? -1500 : -200))
+                    // --- TEXT OVERLAP FIX ---
+                    // Increased charge and collision radius for level 2 nodes
+                    .force("charge", d3.forceManyBody().strength(d => d.level === 0 ? -1500 : (d.level === 1 ? -400 : -150))) 
                     .force("center", d3.forceCenter(0, 0))
-                    .force("collide", d3.forceCollide().radius(d => d.level === 2 ? 15 : 30)); 
+                    .force("collide", d3.forceCollide().radius(d => d.level === 2 ? 25 : 35)); // Increased radius
+                    // --- END OF FIX ---
 
                 // --- Draw Links ---
-                const link = g.append("g") 
+                link = g.append("g") 
                     .attr("class", "skill-graph-links")
                     .selectAll("line")
                     .data(links)
                     .join("line");
 
                 // --- Draw Nodes ---
-                const node = g.append("g")
+                node = g.append("g")
                     .attr("class", "skill-graph-nodes")
                     .selectAll("circle")
                     .data(nodes)
                     .join("circle")
                     .attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7))
                     .attr("fill", d => color(d.group))
+                    // Add class for pulsing
+                    .attr("class", d => d.level === 0 ? "level-0-node" : null)
                     .call(drag(simulation)); 
 
                 // --- Draw Labels ---
-                const text = g.append("g")
+                text = g.append("g")
                     .attr("class", "skill-graph-labels")
                     .selectAll("text")
                     .data(nodes)
@@ -589,32 +683,84 @@
                     .attr("dy", ".35em")
                     .attr("text-anchor", d => d.level === 0 ? "middle" : "start");
 
-                // --- Hover Interaction ---
-                const allNodes = node.data();
-                const allLinks = link.data();
-                
-                node.on('mouseover.highlight', (event, d) => {
-                    const connectedNodes = new Set();
-                    connectedNodes.add(d.id);
+                // --- Refactored Interaction Logic ---
 
-                    allLinks.forEach(l => {
-                        if (l.source.id === d.id) connectedNodes.add(l.target.id);
-                        if (l.target.id === d.id) connectedNodes.add(l.source.id);
-                        if (d.level === 1 && l.source.id === d.id) {
-                            allLinks.forEach(l2 => {
-                                if (l2.source.id === l.target.id) connectedNodes.add(l2.target.id);
-                            });
+                // --- STUTTER FIX: Use radius/font-size animation, NOT transform ---
+                function unhighlight() {
+                    node.style('opacity', 1)
+                        .transition().duration(200)
+                        .attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7)); // Reset radius
+
+                    text.style('opacity', 1)
+                        .transition().duration(200)
+                        .style("font-size", d => d.level === 0 ? "16px" : (d.level === 1 ? "12px" : "10px")) // Reset font size
+                        .attr("dx", d => d.level === 0 ? 0 : (d.level === 1 ? 16 : 10)); // Reset position
+                    
+                    link.style('stroke-opacity', 0.4).style('stroke-width', null);
+                }
+
+                function highlight(d) {
+                    if (!d) return unhighlight(); // Handle un-focus
+
+                    const connectedNodes = new Set();
+                    const group = d.group;
+
+                    // Add all nodes from the same group
+                    allNodes.forEach(n => {
+                        if (n.group === group) {
+                            connectedNodes.add(n.id);
                         }
                     });
+                    
+                    // Always add the root node
+                    connectedNodes.add(allNodes[0].id); // Root is always first
+                    
+                    // If root is hovered, add all categories
+                    if (d.group === 0) {
+                        allNodes.forEach(n => {
+                            if (n.level === 1) connectedNodes.add(n.id);
+                        });
+                    }
 
-                    node.style('opacity', n => connectedNodes.has(n.id) ? 1 : 0.1);
-                    text.style('opacity', t => connectedNodes.has(t.id) ? 1 : 0.1);
-                    link.style('stroke-opacity', l => (l.source.id === d.id || l.target.id === d.id) ? 0.7 : 0.05);
+                    // Animate nodes based on selection
+                    node.style('opacity', n => connectedNodes.has(n.id) ? 1 : 0.1)
+                        .transition().duration(200)
+                        .attr("r", n => connectedNodes.has(n.id) ? 
+                            (n.level === 0 ? 22 : (n.level === 1 ? 15 : 9)) : // Enlarged radius
+                            (n.level === 0 ? 18 : (n.level === 1 ? 12 : 7))  // Default radius
+                        ); 
+                    
+                    // Animate text based on selection
+                    text.style('opacity', t => connectedNodes.has(t.id) ? 1 : 0.1)
+                        .transition().duration(200)
+                        .style("font-size", t => connectedNodes.has(t.id) ?
+                            (t.level === 0 ? "20px" : (t.level === 1 ? "15px" : "12px")) : // Enlarged font
+                            (t.level === 0 ? "16px" : (t.level === 1 ? "12px" : "10px")) // Default font
+                        )
+                        .attr("dx", t => connectedNodes.has(t.id) ?
+                            (t.level === 0 ? 0 : (t.level === 1 ? 19 : 12)) : // Pushed out position
+                            (t.level === 0 ? 0 : (t.level === 1 ? 16 : 10)) // Default position
+                        );
+                    
+                    // Highlight links
+                    link.style('stroke-opacity', l => (connectedNodes.has(l.source.id) && connectedNodes.has(l.target.id)) ? 0.7 : 0.05)
+                        .style('stroke-width', l => (connectedNodes.has(l.source.id) && connectedNodes.has(l.target.id)) ? '2.5px' : '1px');
+                }
+                // --- End of STUTTER FIX ---
 
-                }).on('mouseout.highlight', () => {
-                    node.style('opacity', 1);
-                    text.style('opacity', 1);
-                    link.style('stroke-opacity', 0.4);
+                node.on('mouseover.highlight', (event, d) => {
+                    if (!focusedNode) highlight(d);
+                });
+                
+                node.on('mouseout.highlight', () => {
+                    if (!focusedNode) unhighlight();
+                });
+
+                node.on('click', (event, d) => {
+                    event.stopPropagation(); // Stop click from propagating to SVG/pan
+                    if (focusedNode === d) focusedNode = null;
+                    else focusedNode = d;
+                    highlight(focusedNode);
                 });
 
                 // --- Simulation Tick ---
@@ -675,6 +821,8 @@
                 legend.append("span")
                     .text(d => d.name)
                     .attr("class", "text-gray-400");
+                
+                // --- STUTTER FIX: REMOVED container.addEventListener mouseenter/mouseleave ---
             }
 
             // Initial draw
@@ -711,8 +859,58 @@
                     toggleBtn.textContent = 'Show Graph View';
                 }
             });
+
+            // --- 4. JAVASCRIPT FOR SINE WAVE BACKGROUND ---
+            const canvas = document.getElementById('sine-wave-bg');
+            const ctx = canvas.getContext('2d');
+            let time = 0;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function drawSineWave(frequency, amplitude, speed, color, opacity, lineWidth) {
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height / 2);
+                ctx.strokeStyle = color;
+                ctx.globalAlpha = opacity;
+                ctx.lineWidth = lineWidth;
+
+                for (let x = 0; x < canvas.width; x++) {
+                    const y = Math.sin(x * frequency + time * speed) * amplitude + canvas.height / 2;
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw multiple waves with different properties
+                // Wave 1: Main blue wave
+                drawSineWave(0.003, 100, 0.02, '#3b82f6', 0.5, 2);
+                // Wave 2: Softer purple wave
+                drawSineWave(0.002, 120, 0.01, '#8b5cf6', 0.3, 2);
+                // Wave 3: Subtle white highlight wave
+                drawSineWave(0.004, 80, 0.03, '#ffffff', 0.2, 1);
+                // Wave 4: Slow, deep wave
+                drawSineWave(0.001, 150, 0.005, '#4f46e5', 0.2, 3);
+
+                ctx.globalAlpha = 1.0; // Reset alpha
+                time++;
+                requestAnimationFrame(animate);
+            }
+
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+            animate();
         });
     </script>
 </body>
 </html>
+
+
+
+
 
