@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harshit Kulkarni - Data Science Lead Case Study</title>
+    <!-- Importing Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importing Inter font family -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Importing D3.js for the knowledge graph -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <style>
+        /* Custom styles inspired by the screenshot */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Dark blue/black background */
+            background-color: #05080f; 
+            /* Moon-like theme inspired by screenshot - Raised again */
+            background-image: 
+                /* The bright, sharp arc (the "partition") */
+                radial-gradient(ellipse 80% 40% at 50% 105%, rgba(230, 230, 255, 0.35) 0%, transparent 70%),
+                /* The softer, wider atmospheric glow */
+                radial-gradient(ellipse 120% 50% at 50% 107%, rgba(180, 180, 200, 0.15) 0%, transparent 100%);
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            overflow-x: hidden; /* Prevent horizontal scroll from graph */
+        }
+
+        /* Subtle starry background effect - NOW ANIMATED */
+        @keyframes moveStars {
+          from { background-position: 0 0; }
+          /* Move diagonally */
+          to { background-position: 1000px 1000px; }
+        }
+
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10;
+            /* Layer 1: Small, slow stars */
+            background-image: radial-gradient(1px 1px at 50px 100px, white, transparent),
+                              radial-gradient(0.5px 0.5px at 150px 200px, rgba(255,255,255,0.5), transparent);
+            background-size: 300px 300px; 
+            background-position: 0 0;
+            opacity: 0.7;
+            animation: moveStars 50s linear infinite; /* Sped up */
+        }
+
+        .stars::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Layer 2: Medium, faster stars */
+            background-image: radial-gradient(1.5px 1.5px at 200px 50px, white, transparent),
+                              radial-gradient(1px 1px at 100px 250px, rgba(255,255,255,0.8), transparent);
+            background-size: 250px 250px;
+            background-position: 0 0;
+            opacity: 0.8;
+            animation: moveStars 37.5s linear infinite; /* Sped up */
+        }
+
+        .stars::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Layer 3: "Closest", fastest stars */
+            background-image: radial-gradient(1.5px 1.5px at 75px 150px, white, transparent),
+                              radial-gradient(2px 2px at 175px 250px, rgba(255,255,255,0.7), transparent);
+            background-size: 200px 200px;
+            background-position: 0 0;
+            animation: moveStars 25s linear infinite; /* Sped up */
+        }
+
+
+        /* Custom glassmorphism-style for cards */
+        .glass-card {
+            background: rgba(17, 24, 39, 0.5); /* Semi-transparent dark bg */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(55, 65, 81, 0.3);
+        }
+
+        /* Custom styles for the tabs */
+        .tab-button.active {
+            color: #3b82f6; /* blue-500 */
+            border-color: #3b82f6;
+        }
+
+        .tab-button {
+            transition: all 0.2s ease-in-out;
+        }
+
+        /* --- STYLES FOR KNOWLEDGE GRAPH --- */
+        #skill-graph-container {
+            height: 600px; 
+            position: relative; /* Needed for absolute positioning of button */
+        }
+
+        /* Fullscreen styles */
+        #skill-graph-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 50; /* Ensure it's on top of other content */
+            border-radius: 0;
+            padding: 1.5rem; /* Re-add padding */
+        }
+
+        #skill-graph {
+            width: 100%;
+            height: 100%;
+            cursor: grab; /* Grab cursor for panning */
+        }
+
+        #skill-graph:active {
+            cursor: grabbing; /* Grabbing cursor when panning */
+        }
+
+        .skill-graph-links line {
+            stroke: #6b7280; /* gray-500 */
+            stroke-opacity: 0.4;
+            transition: stroke-opacity 0.2s ease;
+        }
+
+        .skill-graph-nodes circle {
+            stroke: #e5e7eb; /* gray-200 */
+            stroke-width: 1.5px;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            cursor: pointer; /* Change cursor for nodes */
+        }
+
+        .skill-graph-labels text {
+            fill: #d1d5db; /* gray-300 */
+            font-size: 10px;
+            font-weight: 500;
+            pointer-events: none; /* Make text non-interactive */
+            transition: opacity 0.2s ease;
+        }
+        
+        .skill-graph-labels text.level-0 {
+            font-size: 16px;
+            font-weight: 700;
+            fill: #fff;
+        }
+        .skill-graph-labels text.level-1 {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #f3f4f6; /* gray-100 */
+        }
+    </style>
+</head>
+<body class="text-gray-300 antialiased">
+
+    <!-- Starry background element -->
+    <div class="stars"></div>
+
+    <!-- Main container -->
+    <div class="relative z-10">
+
+        <!-- Hero Section -->
+        <section id="hero" class="min-h-screen flex flex-col items-center justify-center text-center p-6">
+            <header class="animate-fade-in-down" style="animation-delay: 0.2s;">
+                <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-4">
+                    Harshit Kulkarni
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-8">
+                    Data Science Lead - presentation
+                </p>
+            </header>
+            
+            <div class="animate-fade-in-up" style="animation-delay: 0.4s;">
+                <a href="#introduction" 
+                   class="py-3 px-8 bg-gray-100 text-gray-900 font-semibold rounded-lg shadow-lg hover:bg-white transform hover:-translate-y-0.5 transition-all duration-200">
+                    View My Approach
+                </a>
+                <p class="mt-4 text-xs text-gray-500">
+                    Case Study for Data & AI
+                </p>
+            </div>
+        </section>
+
+        <!-- Introduction Section -->
+        <section id="introduction" class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-8 text-center">
+                Introduction: My Vision
+            </h2>
+            <p class="text-lg text-gray-400 leading-relaxed text-center">
+                This document outlines my proposal for the Data & AI case study, for which I am applying for the Data Science Lead role. My vision for this position aligns with the described focus on ownership and guiding the technical aspect of the data science function. This proposal addresses how I would approach the key strategic initiatives and responsibilities outlined, particularly focusing on the four key questions provided.
+            </p>
+        </section>
+
+        <!-- Skills Section (NOW KNOWLEDGE GRAPH) -->
+        <section id="skills" class="max-w-6xl mx-auto px-6 py-16 md:py-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-12 text-center">
+                Technical Expertise
+            </h2>
+
+            <!-- NEW: Toggle Button -->
+            <div class="text-center mb-8">
+                <button id="toggle-skill-view" class="py-2 px-4 bg-gray-700 text-gray-200 rounded-lg text-sm hover:bg-gray-600 transition-all">
+                    Show List View
+                </button>
+            </div>
+            
+            <!-- View 1: Container for the D3 Graph (Default) -->
+            <div id="skill-graph-container" class="glass-card rounded-lg p-4 md:p-6 w-full overflow-hidden relative">
+                <!-- Fullscreen Button -->
+                <button id="fullscreen-toggle" class="absolute top-4 right-4 z-20 p-2 rounded-lg bg-gray-800 bg-opacity-50 text-gray-300 hover:bg-opacity-75 hover:text-white transition-all" title="Toggle Fullscreen">
+                    <!-- SVG for "Expand" -->
+                    <svg id="icon-expand" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                    </svg>
+                    <!-- SVG for "Minimize" (hidden by default) -->
+                    <svg id="icon-minimize" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19v-4m0 0h4M15 19l-5-5M5 9V5m0 0h4M5 5l5 5m0 0l-5 5m5-5h4m-4 0v4" />
+                    </svg>
+                </button>
+                <svg id="skill-graph"></svg>
+            </div>
+
+            <!-- Legend for the Graph (Default) -->
+            <div id="skill-legend" class="flex flex-wrap justify-center gap-x-6 gap-y-3 mt-8 text-sm">
+                <!-- Legend items will be dynamically inserted here -->
+            </div>
+
+            <!-- View 2: Static Grid View (Hidden by default) -->
+            <div id="skill-grid-view" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- Skill Card: Applied AI & ML -->
+                <div class="glass-card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-white mb-4">Applied AI & ML</h3>
+                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
+                        <li>LLM’s, SLM’s, Transformer Architecture</li>
+                        <li>BERT, Neural Networks, CUDA</li>
+                        <li>NEO4J, Elastic Search, Cypher Query</li>
+                        <li>Regression models, RAG, Prompt Engineering</li>
+                        <li>Chunking, Langchain, Langgraph</li>
+                        <li>AWS Bedrock, NLP, NLU</li>
+                        <li>State of art models, Observability, Grounding, Agentic AI</li>
+                    </ul>
+                </div>
+                
+                <!-- Skill Card: Full Stack Capabilities -->
+                <div class="glass-card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-white mb-4">Full Stack Capabilities</h3>
+                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
+                        <li>Angular JS, CSS, HTML5</li>
+                        <li>Python, Java, Jboss</li>
+                        <li>Linux, RHEL</li>
+                    </ul>
+                </div>
+
+                <!-- Skill Card: Frameworks & Programming -->
+                <div class="glass-card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-white mb-4">Frameworks & Programming</h3>
+                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
+                        <li>Flask, Django</li>
+                        <li>Python, Java 8</li>
+                        <li>Javascript, Go (Basics)</li>
+                    </ul>
+                </div>
+
+                <!-- Skill Card: Databases -->
+                <div class="glass-card p-6 rounded-lg">
+                    <h3 class="text-xl font-semibold text-white mb-4">Databases</h3>
+                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
+                        <li>MongoDB, SQL, ES</li>
+                        <li>Chroma DB, Dynamodb, Pinecone</li>
+                    </ul>
+                </div>
+
+                <!-- Skill Card: Management & Others -->
+                <div class="glass-card p-6 rounded-lg md:col-span-2 lg:col-span-1">
+                    <h3 class="text-xl font-semibold text-white mb-4">Management & Others</h3>
+                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
+                        <li>Technology Management</li>
+                        <li>Release Management</li>
+                        <li>ARD/PRD, Low level design, high level design</li>
+                        <li>Figma, APP Sec Titan certification</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Strategic Initiatives (Tabs Section) -->
+        <section id="strategy" class="max-w-5xl mx-auto px-6 py-16 md:py-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-12 text-center">
+                Strategic Initiatives
+            </h2>
+            
+            <!-- Tab Buttons -->
+            <div class="flex justify-center border-b border-gray-700 mb-8 space-x-4 md:space-x-8" role="tablist">
+                <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 active" data-tab-target="#tab-transition">
+                    Transitioning to AI
+                </button>
+                <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 text-gray-400 border-transparent" data-tab-target="#tab-value">
+                    Business Value
+                </button>
+                <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 text-gray-400 border-transparent" data-tab-target="#tab-collaboration">
+                    Collaboration
+                </button>
+                <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 text-gray-400 border-transparent" data-tab-target="#tab-challenges">
+                    Tackling Challenges
+                </button>
+            </div>
+
+            <!-- Tab Content Panels -->
+            <div class="mt-8">
+                
+                <!-- Panel 1: Transitioning to Predictive Analytics & AI -->
+                <div id="tab-transition" role="tabpanel" class="space-y-8">
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">1. Team Upskilling & Knowledge Transfer</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Lead by example, drawing on experience training engineers on LLMs (Claude, Flan-T5, etc.).</li>
+                            <li>Establish structured knowledge transfer (KT) sessions to build foundational skills in ML, NLU, and Generative AI.</li>
+                            <li>Ensure everyone has a fair idea about all team projects, like PRISM.</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">2. Targeted Technical Implementation</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Lead the design of scalable architectures, similar to the conditional architecture I designed for integrating Claude LLM with an internal chatbot at DBS Bank.</li>
+                            <li>Build upon experience, such as the chatbot integrated into the Digibank app for customer support. An example of documented data transitioning into AI bot.</li>
+                            <li>Focus on optimizing core products like Prism by reducing response time, thinking from a user's perspective (Product Mindset).</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Panel 2: Prioritizing Initiatives for Business Value -->
+                <div id="tab-value" role="tabpanel" class="hidden space-y-8">
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">1. Immediate Cost Optimization</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Prioritize identifying high-cost computational processes.</li>
+                            <li>Example: Migrated an intent training ML model from GPU to CPU to save company costs, demonstrating clear, immediate ROI.</li>
+                            <li>Explore low-cost, high-efficiency models like Gemini-2.5-flash.</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">2. Automation & Efficiency</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Target high-effort, manual tasks for automation.</li>
+                            <li>Example: Built automated Python scripts to analyze system accuracy, reducing manual testing efforts for stakeholders (similar to Prism testing script).</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">3. Core Product & Performance Enhancement</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Improve core user-facing systems, such as taking end-to-end ownership of an NLU neural network pipeline to improve multi-domain accuracy to 86%.</li>
+                            <li>Improve sales questions by getting to the root problems of PRISM and building feasible, efficient solutions.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Panel 3: Collaboration for Adoption and Success -->
+                <div id="tab-collaboration" role="tabpanel" class="hidden space-y-8">
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">1. Proactive Stakeholder Management</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>I have experience managing stakeholders from different domains to enhance data quality for better LLM performance. I have worked with cross functional domains like - Treasury & Markets, HR, Group procurement and services, Legal compliance services, Investment banking & PE to collab and gather data for our internal chatbot.</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">2. Bringing in Data from stakeholders</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Actively present use cases to secure buy-in, as done when onboarding more business domains at DBS by demonstrating the value of enhanced conversational AI.</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">3. Release Management</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Collaborated with cross-functional teams to establish efficient release management workflows.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Panel 4: Proactively Tackling Team Challenges -->
+                <div id="tab-challenges" role="tabpanel" class="hidden space-y-8">
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">1. Challenge: Team Upskilling & Adopting New Tech</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Experience training junior engineers and interns on LLMs (Claude, Flan-T5, etc.) and providing structured KT sessions.</li>
+                            <li>Worked with graph database technologies (Neo4j, Cypher), the foundation of KGs, and can train the team on their practical application.</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-6 md:p-8 rounded-lg">
+                        <h3 class="text-2xl font-semibold text-white mb-4">2. Challenge: Release Management</h3>
+                        <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
+                            <li>Adopt a Clear Branching Strategy: Use a standardized model where new work starts on its own feature branch (e.g., `feature/BIMI-123`).</li>
+                            <li>This provides perfect traceability from a JIRA ticket to the code in Gitlab.</li>
+                            <li>Changes are only merged into dev after a pull request and successful code review, isolating new work and keeping the main branch stable.</li>
+                            <li>Maintaining confluence for all the documentation, example: Application documentation</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="mt-24 pb-12 text-center text-gray-600 text-sm">
+            &copy; Thank you.
+        </footer>
+
+    </div>
+
+    <!-- JavaScript for Tabs, Graph, and Toggles -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 1. JAVASCRIPT FOR TABS ---
+            const tabs = document.querySelectorAll('[data-tab-target]');
+            const tabContents = document.querySelectorAll('[role="tabpanel"]');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const target = document.querySelector(tab.dataset.tabTarget);
+                    tabContents.forEach(tc => tc.classList.add('hidden'));
+                    if (target) target.classList.remove('hidden');
+                    tabs.forEach(t => t.classList.remove('active', 'text-blue-500', 'border-blue-500'));
+                    tabs.forEach(t => t.classList.add('text-gray-400', 'border-transparent'));
+                    tab.classList.add('active', 'text-blue-500', 'border-blue-500');
+                    tab.classList.remove('text-gray-400', 'border-transparent');
+                });
+            });
+            if (tabs.length > 0) tabs[0].click();
+
+
+            // --- 2. JAVASCRIPT FOR KNOWLEDGE GRAPH ---
+            
+            // Raw skill data from your presentation
+            const skillData = {
+                name: "Technical Expertise",
+                children: [
+                    { 
+                        name: "Applied AI & ML", 
+                        children: [
+                            "LLM’s", "SLM’s", "Transformer", "BERT", "Neural Networks", "CUDA", "NEO4J", 
+                            "Elastic Search", "Cypher Query", "Regression", "RAG", "Prompt Engineering", 
+                            "Chunking", "Langchain", "Langgraph", "AWS Bedrock", "NLP", "NLU", 
+                            "SOTA Models", "Observability", "Grounding", "Agentic AI"
+                        ]
+                    },
+                    { 
+                        name: "Full Stack", 
+                        children: ["Angular JS", "CSS", "HTML5", "Python", "Java", "Jboss", "Linux", "RHEL"]
+                    },
+                    { 
+                        name: "Frameworks & Code", 
+                        children: ["Flask", "Django", "Python", "Java 8", "Javascript", "Go (Basics)"]
+                    },
+                    { 
+                        name: "Databases", 
+                        children: ["MongoDB", "SQL", "ES", "Chroma DB", "Dynamodb", "Pinecone"]
+                    },
+                    { 
+                        name: "Management & Design", 
+                        children: ["Tech Management", "Release Management", "ARD/PRD", "LLD / HLD", "Figma", "App Sec"]
+                    }
+                ]
+            };
+
+            // Select the SVG and container
+            const svg = d3.select("#skill-graph");
+            const container = document.getElementById("skill-graph-container");
+            let simulation; // Make simulation accessible to redraw
+
+            // Fullscreen Elements
+            const toggleButton = document.getElementById('fullscreen-toggle');
+            const iconExpand = document.getElementById('icon-expand');
+            const iconMinimize = document.getElementById('icon-minimize');
+
+            toggleButton.addEventListener('click', () => {
+                const isFullscreen = container.classList.toggle('fullscreen');
+                
+                // Toggle icons
+                iconExpand.classList.toggle('hidden', isFullscreen);
+                iconMinimize.classList.toggle('hidden', !isFullscreen);
+                
+                // Redraw graph to fit new dimensions
+                // A short delay allows the container to resize first
+                setTimeout(drawGraph, 50); 
+            });
+
+
+            // Function to draw the graph
+            function drawGraph() {
+                // Clear previous graph
+                svg.selectAll("*").remove();
+
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+
+                svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
+
+                // --- Zoom & Pan Setup ---
+                const g = svg.append("g").attr("class", "graph-content");
+
+                const zoomed = (event) => {
+                    g.attr("transform", event.transform);
+                };
+
+                const zoom = d3.zoom()
+                    .scaleExtent([0.1, 8]) 
+                    .on("zoom", zoomed);
+                
+                svg.call(zoom);
+
+                // --- Data Processing ---
+                const nodes = [];
+                const links = [];
+                const categories = [];
+                
+                const mainNode = { id: skillData.name, group: 0, level: 0, fx: 0, fy: 0 }; 
+                nodes.push(mainNode);
+
+                let groupIndex = 1;
+                skillData.children.forEach(category => {
+                    const catNode = { id: category.name, group: groupIndex, level: 1 };
+                    nodes.push(catNode);
+                    links.push({ source: mainNode.id, target: category.name });
+                    categories.push({ name: category.name, group: groupIndex });
+
+                    category.children.forEach(skill => {
+                        let skillNode = nodes.find(n => n.id === skill);
+                        if (!skillNode) {
+                            // --- FIX WAS HERE ---
+                            // Changed groupG to groupIndex
+                            skillNode = { id: skill, group: groupIndex, level: 2 }; 
+                            nodes.push(skillNode);
+                        }
+                        links.push({ source: category.name, target: skill });
+                    });
+                    groupIndex++;
+                });
+
+                // --- Color Scale ---
+                const color = d3.scaleOrdinal(d3.schemeTableau10);
+
+                // --- Force Simulation ---
+                // Re-initialize or update simulation
+                simulation = d3.forceSimulation(nodes)
+                    .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.source.level === 0 ? 180 : 80))
+                    .force("charge", d3.forceManyBody().strength(d => d.level === 0 ? -1500 : -200))
+                    .force("center", d3.forceCenter(0, 0))
+                    .force("collide", d3.forceCollide().radius(d => d.level === 2 ? 15 : 30)); 
+
+                // --- Draw Links ---
+                const link = g.append("g") 
+                    .attr("class", "skill-graph-links")
+                    .selectAll("line")
+                    .data(links)
+                    .join("line");
+
+                // --- Draw Nodes ---
+                const node = g.append("g")
+                    .attr("class", "skill-graph-nodes")
+                    .selectAll("circle")
+                    .data(nodes)
+                    .join("circle")
+                    .attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7))
+                    .attr("fill", d => color(d.group))
+                    .call(drag(simulation)); 
+
+                // --- Draw Labels ---
+                const text = g.append("g")
+                    .attr("class", "skill-graph-labels")
+                    .selectAll("text")
+                    .data(nodes)
+                    .join("text")
+                    .text(d => d.id)
+                    .attr("class", d => `level-${d.level}`) 
+                    .attr("dx", d => d.level === 0 ? 0 : (d.level === 1 ? 16 : 10))
+                    .attr("dy", ".35em")
+                    .attr("text-anchor", d => d.level === 0 ? "middle" : "start");
+
+                // --- Hover Interaction ---
+                const allNodes = node.data();
+                const allLinks = link.data();
+                
+                node.on('mouseover.highlight', (event, d) => {
+                    const connectedNodes = new Set();
+                    connectedNodes.add(d.id);
+
+                    allLinks.forEach(l => {
+                        if (l.source.id === d.id) connectedNodes.add(l.target.id);
+                        if (l.target.id === d.id) connectedNodes.add(l.source.id);
+                        if (d.level === 1 && l.source.id === d.id) {
+                            allLinks.forEach(l2 => {
+                                if (l2.source.id === l.target.id) connectedNodes.add(l2.target.id);
+                            });
+                        }
+                    });
+
+                    node.style('opacity', n => connectedNodes.has(n.id) ? 1 : 0.1);
+                    text.style('opacity', t => connectedNodes.has(t.id) ? 1 : 0.1);
+                    link.style('stroke-opacity', l => (l.source.id === d.id || l.target.id === d.id) ? 0.7 : 0.05);
+
+                }).on('mouseout.highlight', () => {
+                    node.style('opacity', 1);
+                    text.style('opacity', 1);
+                    link.style('stroke-opacity', 0.4);
+                });
+
+                // --- Simulation Tick ---
+                simulation.on("tick", () => {
+                    link
+                        .attr("x1", d => d.source.x)
+                        .attr("y1", d => d.source.y)
+                        .attr("x2", d => d.target.x)
+                        .attr("y2", d => d.target.y);
+                    node
+                        .attr("cx", d => d.x)
+                        .attr("cy", d => d.y);
+                    text
+                        .attr("x", d => d.x)
+                        .attr("y", d => d.y);
+                });
+
+                // --- Drag Functions ---
+                function drag(simulation) {
+                    function dragstarted(event, d) {
+                        event.sourceEvent.stopPropagation(); 
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y;
+                    }
+                    function dragged(event, d) {
+                        d.fx = event.x;
+                        d.fy = event.y;
+                    }
+                    function dragended(event, d) {
+                        if (!event.active) simulation.alphaTarget(0);
+                        if (d.level !== 0) { 
+                            d.fx = null;
+                            d.fy = null;
+                        }
+                    }
+                    return d3.drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended);
+                }
+
+                // --- Build Legend ---
+                const legendContainer = d3.select("#skill-legend");
+                legendContainer.selectAll("*").remove(); 
+
+                const legend = legendContainer.selectAll(".legend-item")
+                    .data(categories)
+                    .join("div")
+                    .attr("class", "legend-item flex items-center");
+                
+                legend.append("div")
+                    .style("width", "12px")
+                    .style("height", "12px")
+                    .style("background-color", d => color(d.group))
+                    .attr("class", "rounded-full mr-2");
+
+                legend.append("span")
+                    .text(d => d.name)
+                    .attr("class", "text-gray-400");
+            }
+
+            // Initial draw
+            drawGraph();
+
+            // Redraw on resize
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                // Only redraw if not in fullscreen (fullscreen has its own redraw)
+                if (!container.classList.contains('fullscreen')) {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(drawGraph, 200); 
+                }
+            });
+
+            // --- 3. JAVASCRIPT FOR SKILL VIEW TOGGLE ---
+            const toggleBtn = document.getElementById('toggle-skill-view');
+            const graphView = document.getElementById('skill-graph-container');
+            const legendView = document.getElementById('skill-legend');
+            const gridView = document.getElementById('skill-grid-view');
+
+            toggleBtn.addEventListener('click', () => {
+                // Toggle visibility
+                graphView.classList.toggle('hidden');
+                legendView.classList.toggle('hidden');
+                gridView.classList.toggle('hidden');
+
+                // Update button text
+                if (gridView.classList.contains('hidden')) {
+                    // Graph is visible
+                    toggleBtn.textContent = 'Show List View';
+                } else {
+                    // Grid is visible
+                    toggleBtn.textContent = 'Show Graph View';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+
