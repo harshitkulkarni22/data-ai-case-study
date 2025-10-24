@@ -19,20 +19,19 @@
             font-family: 'Inter', sans-serif;
             /* Dark blue/black background */
             background-color: #05080f; 
-            /* --- ADDED: Half-moon gradient --- */
+            /* RE-ADDED: Moon-like theme */
             background-image: 
                 /* The bright, sharp arc (the "partition") */
                 radial-gradient(ellipse 80% 40% at 50% 105%, rgba(230, 230, 255, 0.35) 0%, transparent 70%),
                 /* The softer, wider atmospheric glow */
                 radial-gradient(ellipse 120% 50% at 50% 107%, rgba(180, 180, 200, 0.15) 0%, transparent 100%);
             background-repeat: no-repeat;
-            background-attachment: fixed; /* Sticks to the viewport */
-            /* --- End of addition --- */
+            background-attachment: fixed;
             overflow-x: hidden; /* Prevent horizontal scroll */
         }
 
-        /* --- Sine Wave Canvas Background --- */
-        #sine-wave-bg {
+        /* --- Sine Wave & Stars Canvas Background --- */
+        #background-canvas { /* Renamed canvas ID */
             position: fixed;
             top: 0;
             left: 0;
@@ -41,63 +40,13 @@
             z-index: -10; /* Farthest back layer */
         }
         
-        /* --- RE-ADDED: Starry Background --- */
-        @keyframes moveStars {
-          from { background-position: 0 0; }
-          /* Move diagonally */
-          to { background-position: 1000px 1000px; }
-        }
-
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -5; /* On top of waves, behind content */
-            /* Layer 1: Small, slow stars */
-            background-image: radial-gradient(1px 1px at 50px 100px, white, transparent),
-                              radial-gradient(0.5px 0.5px at 150px 200px, rgba(255,255,255,0.5), transparent);
-            background-size: 300px 300px; 
-            background-position: 0 0;
-            opacity: 0.7;
-            animation: moveStars 50s linear infinite;
-        }
-
-        .stars::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* Layer 2: Medium, faster stars */
-            background-image: radial-gradient(1.5px 1.5px at 200px 50px, white, transparent),
-                              radial-gradient(1px 1px at 100px 250px, rgba(255,255,255,0.8), transparent);
-            background-size: 250px 250px;
-            background-position: 0 0;
-            opacity: 0.8;
-            animation: moveStars 37.5s linear infinite;
-        }
-
-        .stars::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            /* Layer 3: "Closest", fastest stars */
-            background-image: radial-gradient(1.5px 1.5px at 75px 150px, white, transparent),
-                              radial-gradient(2px 2px at 175px 250px, rgba(255,255,255,0.7), transparent);
-            background-size: 200px 200px;
-            background-position: 0 0;
-            animation: moveStars 25s linear infinite;
-        }
+        /* --- REMOVED CSS Starry Background --- */
+        
 
         /* Custom glassmorphism-style for cards */
         .glass-card {
-            background: rgba(17, 24, 39, 0.25); /* Made even more transparent (was 0.35) */
+            /* --- Made MORE transparent --- */
+            background: rgba(17, 24, 39, 0.25); /* Semi-transparent dark bg */
             backdrop-filter: blur(10px);
             border: 1px solid rgba(55, 65, 81, 0.3);
         }
@@ -111,10 +60,21 @@
         .tab-button {
             transition: all 0.2s ease-in-out;
         }
+        
+        /* --- Tab transition styles --- */
+        [role="tabpanel"] {
+            transition: opacity 300ms ease-in-out;
+        }
+        [role="tabpanel"].hidden {
+            opacity: 0;
+            /* We don't use display:none to allow transitions */
+        }
+
 
         /* --- STYLES FOR KNOWLEDGE GRAPH --- */
         #skill-graph-container {
-            height: 600px; 
+             /* Back to original height */
+            height: 600px;
             position: relative; /* Needed for absolute positioning of button */
         }
 
@@ -128,6 +88,7 @@
             z-index: 50; /* Ensure it's on top of other content */
             border-radius: 0;
             padding: 1.5rem; /* Re-add padding */
+            height: 100vh; /* Ensure full height in fullscreen */
         }
 
         #skill-graph {
@@ -139,6 +100,8 @@
         #skill-graph:active {
             cursor: grabbing; /* Grabbing cursor when panning */
         }
+        
+        /* Removed list view wrapper style */
 
         /* --- Pulsing Glow --- */
         @keyframes pulse-glow {
@@ -160,8 +123,7 @@
         .skill-graph-nodes circle {
             stroke: #e5e7eb; /* gray-200 */
             stroke-width: 1.5px;
-            /* --- Transitions (NO TRANSFORM) --- */
-            transition: opacity 0.2s ease, r 0.2s ease; /* STUTTER FIX */
+            /* --- NO TRANSITIONS (STUTTER FIX) --- */
             cursor: pointer; /* Change cursor for nodes */
             /* --- Glow Effect --- */
             filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
@@ -177,8 +139,7 @@
             font-size: 10px;
             font-weight: 500;
             pointer-events: none; /* Make text non-interactive */
-            /* --- Transitions (NO TRANSFORM) --- */
-            transition: opacity 0.2s ease, font-size 0.2s ease, dx 0.2s ease; /* STUTTER FIX */
+            /* --- NO TRANSITIONS (STUTTER FIX) --- */
             /* --- Glow Effect --- */
             filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
         }
@@ -194,13 +155,25 @@
             font-weight: 600;
             fill: #f3f4f6; /* gray-100 */
         }
+
+        /* --- Creative Toggle Button Style --- */
+        #toggle-skill-view {
+            background: linear-gradient(145deg, rgba(55, 65, 81, 0.6), rgba(31, 41, 55, 0.6));
+            border: 1px solid rgba(55, 65, 81, 0.4);
+            transition: all 0.3s ease;
+        }
+        #toggle-skill-view:hover {
+             background: linear-gradient(145deg, rgba(75, 85, 99, 0.7), rgba(55, 65, 81, 0.7));
+             transform: translateY(-2px);
+             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 <body class="text-gray-300 antialiased">
 
     <!-- Background Layers -->
-    <canvas id="sine-wave-bg"></canvas>
-    <div class="stars"></div>
+    <canvas id="background-canvas"></canvas> <!-- Renamed canvas ID -->
+    <!-- Removed stars div -->
 
     <!-- Main container -->
     <div class="relative z-10">
@@ -212,7 +185,7 @@
                     Harshit Kulkarni
                 </h1>
                 <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-8">
-                    Data Science Lead & AI Strategist
+                    Data Science Lead - Presentation 📈
                 </p>
             </header>
             
@@ -230,37 +203,54 @@
         <!-- Introduction Section -->
         <section id="introduction" class="max-w-4xl mx-auto px-6 py-16 md:py-24">
             <h2 class="text-3xl md:text-4xl font-bold text-white mb-8 text-center">
-                Introduction: My Vision
+                Introduction:
             </h2>
             <p class="text-lg text-gray-400 leading-relaxed text-center">
                 This document outlines my proposal for the Data & AI case study, for which I am applying for the Data Science Lead role. My vision for this position aligns with the described focus on ownership and guiding the technical aspect of the data science function. This proposal addresses how I would approach the key strategic initiatives and responsibilities outlined, particularly focusing on the four key questions provided.
             </p>
         </section>
 
-        <!-- Skills Section (NOW KNOWLEDGE GRAPH) -->
+        <!-- Skills Section (REVERTED TO TOGGLE) -->
         <section id="skills" class="max-w-6xl mx-auto px-6 py-16 md:py-24">
             <h2 class="text-3xl md:text-4xl font-bold text-white mb-12 text-center">
                 Technical Expertise
             </h2>
 
-            <!-- Toggle Button -->
+            <!-- RE-ADDED & STYLED: Toggle Button -->
             <div class="text-center mb-8">
-                <button id="toggle-skill-view" class="py-2 px-4 bg-gray-700 text-gray-200 rounded-lg text-sm hover:bg-gray-600 transition-all">
-                    Show List View
+                 <button id="toggle-skill-view" 
+                    class="p-3 rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+                    title="Toggle View">
+                    <!-- Icon for List View (shown when graph is visible) -->
+                     <svg id="icon-list" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    <!-- Icon for Graph View (hidden initially) -->
+                    <svg id="icon-graph" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /> 
+                      <circle cx="6" cy="19" r="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="18" cy="5" r="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <circle cx="6" cy="5" r="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M14.5 10.5 L18 5"/>
+                      <path d="M6 5 L 10 7"/>
+                      <path d="M10 12 L 6 19"/>
+                    </svg>
                 </button>
+                 <!-- NEW: Text Label -->
+                 <p id="view-label" class="text-xs text-gray-500 mt-1">Knowledge Graph View</p>
             </div>
             
             <!-- View 1: Container for the D3 Graph (Default) -->
             <div id="skill-graph-container" class="glass-card rounded-lg p-4 md:p-6 w-full overflow-hidden relative">
                 <!-- Fullscreen Button -->
                 <button id="fullscreen-toggle" class="absolute top-4 right-4 z-20 p-2 rounded-lg bg-gray-800 bg-opacity-50 text-gray-300 hover:bg-opacity-75 hover:text-white transition-all" title="Toggle Fullscreen">
-                    <!-- SVG for "Expand" -->
+                    <!-- Innovative "Expand" Icon (Window) -->
                     <svg id="icon-expand" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 8V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2v-2" />
                     </svg>
-                    <!-- SVG for "Minimize" (hidden by default) -->
+                    <!-- Innovative "Minimize" Icon (Restore) -->
                     <svg id="icon-minimize" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19v-4m0 0h4M15 19l-5-5M5 9V5m0 0h4M5 5l5 5m0 0l-5 5m5-5h4m-4 0v4" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M16 13V5a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2zm-2 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2v-6a2 2 0 012-2h6a2 2 0 012 2z" />
                     </svg>
                 </button>
                 <svg id="skill-graph"></svg>
@@ -273,62 +263,10 @@
 
             <!-- View 2: Static Grid View (Hidden by default) -->
             <div id="skill-grid-view" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                
-                <!-- Skill Card: Applied AI & ML -->
-                <div class="glass-card p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold text-white mb-4">Applied AI & ML</h3>
-                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
-                        <li>LLM’s, SLM’s, Transformer Architecture</li>
-                        <li>BERT, Neural Networks, CUDA</li>
-                        <li>NEO4J, Elastic Search, Cypher Query</li>
-                        <li>Regression models, RAG, Prompt Engineering</li>
-                        <li>Chunking, Langchain, Langgraph</li>
-                        <li>AWS Bedrock, NLP, NLU</li>
-                        <li>State of art models, Observability, Grounding, Agentic AI</li>
-                    </ul>
-                </div>
-                
-                <!-- Skill Card: Full Stack Capabilities -->
-                <div class="glass-card p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold text-white mb-4">Full Stack Capabilities</h3>
-                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
-                        <li>Angular JS, CSS, HTML5</li>
-                        <li>Python, Java, Jboss</li>
-                        <li>Linux, RHEL</li>
-                    </ul>
-                </div>
-
-                <!-- Skill Card: Frameworks & Programming -->
-                <div class="glass-card p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold text-white mb-4">Frameworks & Programming</h3>
-                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
-                        <li>Flask, Django</li>
-                        <li>Python, Java 8</li>
-                        <li>Javascript, Go (Basics)</li>
-                    </ul>
-                </div>
-
-                <!-- Skill Card: Databases -->
-                <div class="glass-card p-6 rounded-lg">
-                    <h3 class="text-xl font-semibold text-white mb-4">Databases</h3>
-                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
-                        <li>MongoDB, SQL, ES</li>
-                        <li>Chroma DB, Dynamodb, Pinecone</li>
-                    </ul>
-                </div>
-
-                <!-- Skill Card: Management & Others -->
-                <div class="glass-card p-6 rounded-lg md:col-span-2 lg:col-span-1">
-                    <h3 class="text-xl font-semibold text-white mb-4">Management & Others</h3>
-                    <ul class="list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm">
-                        <li>Technology Management</li>
-                        <li>Release Management</li>
-                        <li>ARD/PRD, Low level design, high level design</li>
-                        <li>Figma, APP Sec Titan certification</li>
-                    </ul>
-                </div>
+                <!-- Content is now dynamically generated from skillData -->
             </div>
         </section>
+
 
         <!-- Strategic Initiatives (Tabs Section) -->
         <section id="strategy" class="max-w-5xl mx-auto px-6 py-16 md:py-24">
@@ -353,17 +291,16 @@
             </div>
 
             <!-- Tab Content Panels -->
-            <div class="mt-8 relative"> <!-- Added relative positioning for children -->
+            <div class="mt-8 relative" style="transition: height 300ms ease-in-out;">
                 
                 <!-- Panel 1: Transitioning to Predictive Analytics & AI -->
-                <!-- Added transition classes, removed 'hidden' by default -->
-                <div id="tab-transition" role="tabpanel" class="space-y-8 transition-opacity duration-300">
+                <div id="tab-transition" role="tabpanel" class="space-y-8 absolute w-full">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Team Upskilling & Knowledge Transfer</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
                             <li>Lead by example, drawing on experience training engineers on LLMs (Claude, Flan-T5, etc.).</li>
-                            <li>Establish structured knowledge transfer (KT) sessions to build foundational skills in ML, NLU, and Generative AI.</li>
-                            <li>Ensure everyone has a fair idea about all team projects, like PRISM.</li>
+                            <li>We will establish structured knowledge transfer (KT) sessions to build foundational skills in ML, NLU, and Generative AI, just as I did for my previous team.</li>
+                            <li>Everyone should have a fair idea about every application in our team example: PRISM.</li>
                         </ul>
                     </div>
                     <div class="glass-card p-6 md:p-8 rounded-lg">
@@ -377,10 +314,13 @@
                 </div>
                 
                 <!-- Panel 2: Prioritizing Initiatives for Business Value -->
-                <!-- Added transition classes and opacity-0 -->
-                <div id="tab-value" role="tabpanel" class="hidden space-y-8 transition-opacity duration-300 opacity-0">
+                <div id="tab-value" role="tabpanel" class="hidden space-y-8 absolute w-full">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Immediate Cost Optimization</h3>
+                        <p class="text-gray-400 mb-4">
+                        Key areas of focus - Cost Optimization, Efficiency Gains, and Performance Enhancement. 
+                       <a href="https://docs.google.com/spreadsheets/d/1104NYzT2YrAkthINzPqJesPxnEh7frx9GCGX1pqOYEo/edit?gid=0#gid=0" class="text-blue-400 hover:text-blue-300 underline">Link to future enhancements</a>
+                       </p>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
                             <li>Prioritize identifying high-cost computational processes.</li>
                             <li>Example: Migrated an intent training ML model from GPU to CPU to save company costs, demonstrating clear, immediate ROI.</li>
@@ -404,8 +344,7 @@
                 </div>
 
                 <!-- Panel 3: Collaboration for Adoption and Success -->
-                <!-- Added transition classes and opacity-0 -->
-                <div id="tab-collaboration" role="tabpanel" class="hidden space-y-8 transition-opacity duration-300 opacity-0">
+                <div id="tab-collaboration" role="tabpanel" class="hidden space-y-8 absolute w-full">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Proactive Stakeholder Management</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
@@ -421,19 +360,18 @@
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">3. Release Management</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                            <li>Collaborated with cross-functional teams to establish efficient release management workflows.</li>
+                            <li>Collaborated with cross-functional teams to establish efficient release management workflows and meet the deadlines before code cut off windows.</li>
                         </ul>
                     </div>
                 </div>
 
                 <!-- Panel 4: Proactively Tackling Team Challenges -->
-                <!-- Added transition classes and opacity-0 -->
-                <div id="tab-challenges" role="tabpanel" class="hidden space-y-8 transition-opacity duration-300 opacity-0">
+                <div id="tab-challenges" role="tabpanel" class="hidden space-y-8 absolute w-full">
                     <div class="glass-card p-6 md:p-8 rounded-lg">
                         <h3 class="text-2xl font-semibold text-white mb-4">1. Challenge: Team Upskilling & Adopting New Tech</h3>
                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
                             <li>Experience training junior engineers and interns on LLMs (Claude, Flan-T5, etc.) and providing structured KT sessions.</li>
-                            <li>Worked with graph database technologies (Neo4j, Cypher), the foundation of KGs, and can train the team on their practical application.</li>
+                            <li>Worked with graph database technologies (Neo4j, Cypher), the foundation of KGs, and can train the team on their practical application with brainstorming sessions.</li>
                         </ul>
                     </div>
                     <div class="glass-card p-6 md:p-8 rounded-lg">
@@ -452,7 +390,7 @@
 
         <!-- Footer -->
         <footer class="mt-24 pb-12 text-center text-gray-600 text-sm">
-            &copy; Thank you.
+            Thank you.
         </footer>
 
     </div>
@@ -461,93 +399,113 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             
-            // --- 1. JAVASCRIPT FOR TABS (WITH FADE TRANSITION) ---
+            // --- 1. JAVASCRIPT FOR TABS ---
             const tabs = document.querySelectorAll('[data-tab-target]');
             const tabContents = document.querySelectorAll('[role="tabpanel"]');
-            let activeTab = tabs[0];
-            let activePanel = activeTab ? document.querySelector(activeTab.dataset.tabTarget) : null;
+            const tabContainer = document.querySelector('.mt-8.relative');
 
-            // Set initial active styles
-            if (activeTab) {
-                activeTab.classList.add('active', 'text-blue-500', 'border-blue-500');
-                activeTab.classList.remove('text-gray-400', 'border-transparent');
-            }
-            if (activePanel) {
-                // Ensure initial panel is visible
-                activePanel.classList.remove('hidden', 'opacity-0');
-            }
+            let currentTab = tabContents[0];
+            let currentTabHeight = currentTab.offsetHeight;
+            tabContainer.style.height = `${currentTabHeight}px`;
 
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
-                    if (tab === activeTab) return; // Do nothing if clicking the same tab
+                    const targetSelector = tab.dataset.tabTarget;
+                    const target = document.querySelector(targetSelector);
+                    if (!target || target === currentTab) return;
 
-                    const target = document.querySelector(tab.dataset.tabTarget);
-                    if (!target) return;
-
-                    // 1. Fade out the current panel
-                    if (activePanel) {
-                        activePanel.classList.add('opacity-0');
-                    }
-
-                    // 2. Set timeout to switch panels
-                    setTimeout(() => {
-                        // 3. Hide old panel
-                        if (activePanel) {
-                            activePanel.classList.add('hidden');
-                        }
-
-                        // 4. Show new panel (it's already opacity-0)
-                        target.classList.remove('hidden');
-
-                        // 5. Force a reflow (important!)
-                        // Reading a property like offsetHeight forces the browser to apply the 'hidden' removal
-                        target.offsetHeight; 
-
-                        // 6. Fade in new panel
-                        target.classList.remove('opacity-0');
-                        
-                        // 7. Update active tab/panel trackers
-                        activeTab = tab;
-                        activePanel = target;
-
-                    }, 300); // Must match the transition duration (300ms)
-
-                    // 8. Update tab button styles
-                    tabs.forEach(t => t.classList.remove('active', 'text-blue-500', 'border-blue-500'));
-                    tabs.forEach(t => t.classList.add('text-gray-400', 'border-transparent'));
+                    // Deactivate all tabs
+                    tabs.forEach(t => {
+                        t.classList.remove('active', 'text-blue-500', 'border-blue-500');
+                        t.classList.add('text-gray-400', 'border-transparent');
+                    });
+                    
+                    // Activate clicked tab
                     tab.classList.add('active', 'text-blue-500', 'border-blue-500');
                     tab.classList.remove('text-gray-400', 'border-transparent');
+
+                    // --- Tab Transition Logic ---
+                    // Make the new tab visible but transparent and out of the way
+                    target.classList.remove('hidden');
+                    
+                    // Get height first
+                    const newHeight = target.offsetHeight;
+
+                    // Fade out the current tab
+                    currentTab.classList.add('opacity-0');
+                    
+                    // After a short delay, hide the old tab and show the new one
+                    setTimeout(() => {
+                        currentTab.classList.add('hidden');
+                        
+                        // Set the container height to the new tab's height
+                        tabContainer.style.height = `${newHeight}px`;
+
+                        // Fade in the new tab
+                        target.classList.remove('opacity-0');
+                        
+                        // Update the current tab
+                        currentTab = target;
+                    }, 300); // Match this to CSS transition duration
                 });
             });
-            // --- END OF TAB SCRIPT ---
+
+            // Initialize the first tab
+            if (tabs.length > 0) {
+                tabs[0].classList.add('active', 'text-blue-500', 'border-blue-500');
+                tabs[0].classList.remove('text-gray-400', 'border-transparent');
+                tabContents[0].classList.remove('hidden', 'opacity-0');
+            }
+            
+            // Adjust container height on window resize
+            window.addEventListener('resize', () => {
+                if (currentTab) {
+                    // Use rAF to ensure we get the height *after* potential layout shifts
+                    requestAnimationFrame(() => {
+                        const newHeight = currentTab.offsetHeight;
+                        tabContainer.style.height = `${newHeight}px`;
+                    });
+                }
+            });
 
 
             // --- 2. JAVASCRIPT FOR KNOWLEDGE GRAPH ---
             
-            // Raw skill data from your presentation
+            // --- Updated skillData object ---
             const skillData = {
                 name: "Technical Expertise",
                 children: [
                     { 
                         name: "Applied AI & ML", 
                         children: [
-                            "LLM’s", "SLM’s", "Transformer", "BERT", "Neural Networks", "CUDA", "NEO4J", 
-                            "Elastic Search", "Cypher Query", "Regression", "RAG", "Prompt Engineering", 
-                            "Chunking", "Langchain", "Langgraph", "AWS Bedrock", "NLP", "NLU", 
-                            "SOTA Models", "Observability", "Grounding", "Agentic AI"
+                            "LLM’s", "SLM’s", "Transformer", "BERT", "Neural Networks", "Regression", 
+                            "RAG", "Prompt Engineering", "Chunking", "Langchain", "Langgraph", "NLP", "NLU", 
+                            "SOTA Models", "Agentic AI"
+                        ]
+                    },
+                    {
+                        name: "Applied AI Infra", 
+                        children: [
+                            "AWS Bedrock", "CUDA", "Observability", "Grounding"
+                        ]
+                    },
+                    { 
+                        name: "Databases (Vector/Graph)", 
+                        children: [
+                            "NEO4J", "Elastic Search", "Cypher Query", "Chroma DB", "Pinecone"
                         ]
                     },
                     { 
                         name: "Full Stack", 
-                        children: ["Angular JS", "CSS", "HTML5", "Python", "Java", "Jboss", "Linux", "RHEL"]
+                        children: ["Angular JS", "CSS", "HTML5", "Jboss", "Linux"]
                     },
                     { 
-                        name: "Frameworks & Code", 
-                        children: ["Flask", "Django", "Python", "Java 8", "Javascript", "Go (Basics)"]
+                        name: "Languages & Frameworks", 
+                        children: ["Python", "Pandas", "Numpy", "Java 8", "Javascript", "Flask", "Django", "Go (Basics)"]
                     },
                     { 
-                        name: "Databases", 
-                        children: ["MongoDB", "SQL", "ES", "Chroma DB", "Dynamodb", "Pinecone"]
+                        name: "Databases (SQL/NoSQL)", 
+                        children: ["MongoDB", "SQL", "ES", "Dynamodb"]
                     },
                     { 
                         name: "Management & Design", 
@@ -555,23 +513,23 @@
                     }
                 ]
             };
-
+            
             // Select the SVG and container
             const svg = d3.select("#skill-graph");
             const container = document.getElementById("skill-graph-container");
             let simulation; // Make simulation accessible to redraw
             let link, node, text; // Make graph elements globally accessible within this scope
-            let focusedNode = null; // For click-to-focus
             let allNodes = [];
             let allLinks = [];
             let zoom; // Make zoom accessible
+            let width, height; // Make dimensions global
 
             // Fullscreen Elements
-            const toggleButton = document.getElementById('fullscreen-toggle');
+            const fullscreenButton = document.getElementById('fullscreen-toggle'); // Renamed for clarity
             const iconExpand = document.getElementById('icon-expand');
             const iconMinimize = document.getElementById('icon-minimize');
 
-            toggleButton.addEventListener('click', () => {
+            fullscreenButton.addEventListener('click', () => {
                 const isFullscreen = container.classList.toggle('fullscreen');
                 
                 // Toggle icons
@@ -588,8 +546,8 @@
                 // Clear previous graph
                 svg.selectAll("*").remove();
 
-                const width = container.clientWidth;
-                const height = container.clientHeight;
+                width = container.clientWidth;
+                height = container.clientHeight;
 
                 svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
 
@@ -604,11 +562,8 @@
                     .scaleExtent([0.1, 8]) 
                     .on("zoom", zoomed);
                 
-                // Add click to background to un-focus
-                svg.call(zoom).on("click", () => {
-                    focusedNode = null;
-                    unhighlight();
-                });
+                // Apply zoom behavior
+                svg.call(zoom);
 
                 // --- Data Processing ---
                 const nodes = [];
@@ -642,15 +597,14 @@
                 // --- Color Scale ---
                 const color = d3.scaleOrdinal(d3.schemeTableau10);
 
-                // --- Force Simulation ---
+                // --- Force Simulation (OVERLAP FIX) ---
                 simulation = d3.forceSimulation(nodes)
                     .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.source.level === 0 ? 180 : 80))
-                    // --- TEXT OVERLAP FIX ---
-                    // Increased charge and collision radius for level 2 nodes
+                    // Increased repulsion for level 2 (skill) nodes
                     .force("charge", d3.forceManyBody().strength(d => d.level === 0 ? -1500 : (d.level === 1 ? -400 : -150))) 
                     .force("center", d3.forceCenter(0, 0))
-                    .force("collide", d3.forceCollide().radius(d => d.level === 2 ? 25 : 35)); // Increased radius
-                    // --- END OF FIX ---
+                    // Increased collision radius for level 2 (skill) nodes
+                    .force("collide", d3.forceCollide().radius(d => d.level === 2 ? 25 : 30)); 
 
                 // --- Draw Links ---
                 link = g.append("g") 
@@ -683,16 +637,13 @@
                     .attr("dy", ".35em")
                     .attr("text-anchor", d => d.level === 0 ? "middle" : "start");
 
-                // --- Refactored Interaction Logic ---
-
-                // --- STUTTER FIX: Use radius/font-size animation, NOT transform ---
+                // --- NEW: Instant Hover-to-Highlight Logic (NO STUTTER) ---
+                
                 function unhighlight() {
                     node.style('opacity', 1)
-                        .transition().duration(200)
                         .attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7)); // Reset radius
 
                     text.style('opacity', 1)
-                        .transition().duration(200)
                         .style("font-size", d => d.level === 0 ? "16px" : (d.level === 1 ? "12px" : "10px")) // Reset font size
                         .attr("dx", d => d.level === 0 ? 0 : (d.level === 1 ? 16 : 10)); // Reset position
                     
@@ -700,16 +651,14 @@
                 }
 
                 function highlight(d) {
-                    if (!d) return unhighlight(); // Handle un-focus
+                    if (!d) return unhighlight();
 
                     const connectedNodes = new Set();
                     const group = d.group;
 
                     // Add all nodes from the same group
                     allNodes.forEach(n => {
-                        if (n.group === group) {
-                            connectedNodes.add(n.id);
-                        }
+                        if (n.group === group) connectedNodes.add(n.id);
                     });
                     
                     // Always add the root node
@@ -722,17 +671,14 @@
                         });
                     }
 
-                    // Animate nodes based on selection
+                    // --- Instantaneous changes ---
                     node.style('opacity', n => connectedNodes.has(n.id) ? 1 : 0.1)
-                        .transition().duration(200)
                         .attr("r", n => connectedNodes.has(n.id) ? 
                             (n.level === 0 ? 22 : (n.level === 1 ? 15 : 9)) : // Enlarged radius
                             (n.level === 0 ? 18 : (n.level === 1 ? 12 : 7))  // Default radius
                         ); 
                     
-                    // Animate text based on selection
                     text.style('opacity', t => connectedNodes.has(t.id) ? 1 : 0.1)
-                        .transition().duration(200)
                         .style("font-size", t => connectedNodes.has(t.id) ?
                             (t.level === 0 ? "20px" : (t.level === 1 ? "15px" : "12px")) : // Enlarged font
                             (t.level === 0 ? "16px" : (t.level === 1 ? "12px" : "10px")) // Default font
@@ -742,26 +688,16 @@
                             (t.level === 0 ? 0 : (t.level === 1 ? 16 : 10)) // Default position
                         );
                     
-                    // Highlight links
                     link.style('stroke-opacity', l => (connectedNodes.has(l.source.id) && connectedNodes.has(l.target.id)) ? 0.7 : 0.05)
                         .style('stroke-width', l => (connectedNodes.has(l.source.id) && connectedNodes.has(l.target.id)) ? '2.5px' : '1px');
                 }
-                // --- End of STUTTER FIX ---
 
-                node.on('mouseover.highlight', (event, d) => {
-                    if (!focusedNode) highlight(d);
-                });
+                // Apply hover events
+                node.on('mouseover.highlight', (event, d) => highlight(d));
+                node.on('mouseout.highlight', () => unhighlight());
                 
-                node.on('mouseout.highlight', () => {
-                    if (!focusedNode) unhighlight();
-                });
-
-                node.on('click', (event, d) => {
-                    event.stopPropagation(); // Stop click from propagating to SVG/pan
-                    if (focusedNode === d) focusedNode = null;
-                    else focusedNode = d;
-                    highlight(focusedNode);
-                });
+                // REMOVED click-to-zoom logic
+                // --- End of new interaction logic ---
 
                 // --- Simulation Tick ---
                 simulation.on("tick", () => {
@@ -821,8 +757,6 @@
                 legend.append("span")
                     .text(d => d.name)
                     .attr("class", "text-gray-400");
-                
-                // --- STUTTER FIX: REMOVED container.addEventListener mouseenter/mouseleave ---
             }
 
             // Initial draw
@@ -843,31 +777,96 @@
             const graphView = document.getElementById('skill-graph-container');
             const legendView = document.getElementById('skill-legend');
             const gridView = document.getElementById('skill-grid-view');
-
+            const iconList = document.getElementById('icon-list'); // Get icon refs
+            const iconGraph = document.getElementById('icon-graph');
+            const viewLabel = document.getElementById('view-label'); // Get label ref
+            
+            // --- Manually create list view from skillData ---
+            const gridContainer = document.getElementById("skill-grid-view");
+            gridContainer.innerHTML = ""; // Clear any static content
+            
+            const color = d3.scaleOrdinal(d3.schemeTableau10);
+            let groupIndex = 1;
+            
+            skillData.children.forEach(category => {
+                const card = document.createElement("div");
+                 // Back to multiple columns for list view
+                card.className = "glass-card p-6 rounded-lg";
+                
+                const title = document.createElement("h3");
+                title.className = "text-xl font-semibold text-white mb-4";
+                title.textContent = category.name;
+                title.style.color = color(groupIndex); // Match graph color
+                
+                const list = document.createElement("ul");
+                list.className = "list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm";
+                
+                category.children.forEach(skill => {
+                    const item = document.createElement("li");
+                    item.textContent = skill;
+                    list.appendChild(item);
+                });
+                
+                card.appendChild(title);
+                card.appendChild(list);
+                gridContainer.appendChild(card);
+                
+                groupIndex++;
+            });
+            // --- End of dynamic list view creation ---
+            
+            // --- Toggle Button Click Listener ---
             toggleBtn.addEventListener('click', () => {
+                const isGraphVisible = !graphView.classList.contains('hidden');
+                
                 // Toggle visibility
                 graphView.classList.toggle('hidden');
                 legendView.classList.toggle('hidden');
                 gridView.classList.toggle('hidden');
 
-                // Update button text
-                if (gridView.classList.contains('hidden')) {
-                    // Graph is visible
-                    toggleBtn.textContent = 'Show List View';
+                // Toggle icons
+                iconList.classList.toggle('hidden', !isGraphVisible); // Show List icon when switching TO list
+                iconGraph.classList.toggle('hidden', isGraphVisible); // Show Graph icon when switching TO graph
+
+                 // Update title for accessibility and label text
+                if (isGraphVisible) {
+                    toggleBtn.title = "Show Graph View";
+                    viewLabel.textContent = "List View"; // Update label
                 } else {
-                    // Grid is visible
-                    toggleBtn.textContent = 'Show Graph View';
+                    toggleBtn.title = "Show List View";
+                    viewLabel.textContent = "Knowledge Graph View"; // Update label
                 }
             });
+            
 
-            // --- 4. JAVASCRIPT FOR SINE WAVE BACKGROUND ---
-            const canvas = document.getElementById('sine-wave-bg');
+            // --- 4. JAVASCRIPT FOR BACKGROUND CANVAS (Waves & Stars) ---
+            const canvas = document.getElementById('background-canvas'); // Use the correct ID
             const ctx = canvas.getContext('2d');
             let time = 0;
+            let stars = []; // Array to hold star particles
+
+            // --- Star Particle generation (ADJUSTED & ADDED SPEED) ---
+            const numStars = 150; // Increased count
+            function initStars() {
+                stars = []; // Clear existing stars
+                for (let i = 0; i < numStars; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        radius: Math.random() * 1.5 + 0.5, // Star size
+                        baseAlpha: Math.random() * 0.5 + 0.5, // Increased base brightness (0.5 to 1.0)
+                        alpha: Math.random(), // Current brightness
+                        twinkleSpeed: Math.random() * 0.02 + 0.005, // How fast it twinkles
+                        xSpeed: (Math.random() - 0.5) * 0.1, // Added horizontal speed (slow drift)
+                        ySpeed: Math.random() * 0.2 + 0.1 // Falling speed
+                    });
+                }
+            }
 
             function resizeCanvas() {
                 canvas.width = window.innerWidth;
                 canvas.height = window.innerHeight;
+                initStars(); // Recreate stars on resize
             }
 
             function drawSineWave(frequency, amplitude, speed, color, opacity, lineWidth) {
@@ -884,33 +883,68 @@
                 ctx.stroke();
             }
 
+            function drawStars() {
+                // Ensure globalAlpha is reset before drawing stars
+                 ctx.globalAlpha = 1.0; 
+                stars.forEach(star => {
+                    // Update twinkle
+                    star.alpha = star.baseAlpha * (Math.sin(time * star.twinkleSpeed) * 0.5 + 0.5); // Oscillate opacity
+
+                    // Update position (falling effect - NOW DIAGONAL)
+                    star.x += star.xSpeed; 
+                    star.y += star.ySpeed;
+                    
+                    // Reset star if it falls off screen (wrap around)
+                    if (star.y > canvas.height + star.radius) { 
+                        star.y = -star.radius;
+                        star.x = Math.random() * canvas.width;
+                    } else if (star.y < -star.radius) { // Handle moving up? Unlikely with current speeds
+                         star.y = canvas.height + star.radius;
+                         star.x = Math.random() * canvas.width;
+                    }
+                     if (star.x > canvas.width + star.radius) { 
+                        star.x = -star.radius;
+                         star.y = Math.random() * canvas.height; // Reset y too for better distribution
+                    } else if (star.x < -star.radius) {
+                        star.x = canvas.width + star.radius;
+                         star.y = Math.random() * canvas.height;
+                    }
+
+
+                    // Draw star
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                    ctx.fill();
+                });
+            }
+
             function animate() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
-                // Draw multiple waves with different properties
+                // Draw waves first (opacity increased)
                 // Wave 1: Main blue wave
-                drawSineWave(0.003, 100, 0.02, '#3b82f6', 0.5, 2);
+                drawSineWave(0.003, 100, 0.01, '#3b82f6', 0.35, 2); // Increased opacity from 0.2
                 // Wave 2: Softer purple wave
-                drawSineWave(0.002, 120, 0.01, '#8b5cf6', 0.3, 2);
+                drawSineWave(0.002, 120, 0.005, '#8b5cf6', 0.2, 2); // Increased opacity from 0.1
                 // Wave 3: Subtle white highlight wave
-                drawSineWave(0.004, 80, 0.03, '#ffffff', 0.2, 1);
+                drawSineWave(0.004, 80, 0.015, '#ffffff', 0.15, 1); // Increased opacity from 0.1
                 // Wave 4: Slow, deep wave
-                drawSineWave(0.001, 150, 0.005, '#4f46e5', 0.2, 3);
+                drawSineWave(0.001, 150, 0.002, '#4f46e5', 0.1, 3); // Increased opacity from 0.05
 
-                ctx.globalAlpha = 1.0; // Reset alpha
+                // Draw stars on top
+                drawStars(); 
+
+                ctx.globalAlpha = 1.0; // Reset alpha for next frame
                 time++;
                 requestAnimationFrame(animate);
             }
 
             window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
+            resizeCanvas(); // Initial call includes initStars()
             animate();
         });
     </script>
 </body>
 </html>
-
-
-
-
 
