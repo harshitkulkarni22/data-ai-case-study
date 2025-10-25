@@ -7,303 +7,521 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display.swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     
     <style>
-        /* --- Base HTML Background --- */
-        html {
-            height: 100%;
-            background-color: #050f1a; 
-        }
-
-        /* --- Body Styles for Interactive Background --- */
+        /* Custom styles */
         body {
             font-family: 'Inter', sans-serif;
-            color: #d1d5db; 
-            background-color: transparent; 
+            background-color: #05080f; 
             background-image: 
-                radial-gradient(ellipse 80% 40% at 50% 105%, rgba(230, 230, 255, 0.1) 0%, transparent 70%);
+                radial-gradient(ellipse 80% 40% at 50% 105%, rgba(230, 230, 255, 0.35) 0%, transparent 70%),
+                radial-gradient(ellipse 120% 50% at 50% 107%, rgba(180, 180, 200, 0.15) 0%, transparent 100%);
             background-repeat: no-repeat;
             background-attachment: fixed;
-            overflow-x: hidden; 
-            position: relative; 
-            cursor: none; 
-            height: 100%; 
-            margin: 0; 
-        }
-
-        /* --- Bottom Glow Effect --- */
-        @keyframes soft-pulse {
-            0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.5; } 
-            50% { transform: translateX(-50%) scale(1.02); opacity: 0.7; } 
-        }
-        body::after {
-            content: ''; position: fixed; bottom: -15%; left: 50%;
-            width: 150vw; height: 80vh; 
-            background: radial-gradient(circle at center, rgba(173, 216, 230, 0.25) 0%, rgba(59, 130, 246, 0.1) 20%, transparent 65%);
-            border-radius: 50%; z-index: 1; 
-            animation: soft-pulse 4s infinite ease-in-out; pointer-events: none; 
-        }
-
-        /* --- Sine Wave & Stars Canvas Background --- */
-        #background-canvas { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
+            overflow-x: hidden;
+            
+            cursor: none;
+            
+            /* --- 1. TRANSITION STYLE (FADE + ZOOM) --- */
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
         }
         
-        /* --- Glass Card Style (Unchanged) --- */
+        /* --- 2. FADE-OUT CLASS (FADE + ZOOM) --- */
+        body.fade-and-zoom-out {
+            opacity: 0;
+            transform: scale(0.95); /* Zoom out effect */
+        }
+
+        /* --- 3. GLOWING CURSOR STYLES (UPDATED) --- */
+        #custom-cursor {
+            position: fixed;
+            /* --- Bigger --- */
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            /* --- Blue & Lighter --- */
+            background-color: rgba(96, 165, 250, 0.3); /* Lighter blue, less opacity */
+            box-shadow: 0 0 15px 5px rgba(96, 165, 250, 0.5); /* Lighter blue glow */
+            z-index: 9999;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: transform 0.05s linear, width 0.2s ease-out, height 0.2s ease-out, opacity 0.2s ease-out;
+            opacity: 0; 
+        }
+        
+        #custom-cursor.grow {
+            /* --- Bigger --- */
+            width: 44px;
+            height: 44px;
+        }
+        /* --- End of cursor styles --- */
+
+        #background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -10;
+        }
+        
         .glass-card {
-            background: rgba(17, 24, 39, 0.25); 
+            background: rgba(17, 24, 39, 0.25);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(55, 65, 81, 0.3);
         }
 
-        /* --- Tabs Styles (Unchanged) --- */
-        .tab-button.active { color: #3b82f6; border-color: #3b82f6; }
-        .tab-button { transition: all 0.2s ease-in-out; }
-        [role="tabpanel"] { transition: opacity 300ms ease-in-out; }
-        [role="tabpanel"].hidden { opacity: 0; }
-
-        /* --- Knowledge Graph Styles (Unchanged) --- */
-        #skill-graph-container { height: 600px; position: relative; }
-        #skill-graph-container.fullscreen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 50; border-radius: 0; padding: 1.5rem; }
-        #skill-graph { width: 100%; height: 100%; cursor: grab; }
-        #skill-graph:active { cursor: grabbing; }
-        @keyframes pulse-glow { 0%, 100% { filter: drop-shadow(0 0 3px #fff); } 50% { filter: drop-shadow(0 0 10px #fff); } }
-        .skill-graph-links line { stroke: #6b7280; stroke-opacity: 0.4; transition: stroke-opacity 0.2s ease, stroke-width 0.2s ease; }
-        .skill-graph-nodes circle { stroke: #e5e7eb; stroke-width: 1.5px; cursor: pointer; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7)); }
-        .skill-graph-nodes circle.level-0-node { animation: pulse-glow 2.5s infinite ease-in-out; }
-        .skill-graph-labels text { fill: #d1d5db; font-size: 10px; font-weight: 500; pointer-events: none; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7)); }
-        .skill-graph-labels text.level-0 { font-size: 16px; font-weight: 700; fill: #fff; animation: pulse-glow 2.5s infinite ease-in-out; }
-        .skill-graph-labels text.level-1 { font-size: 12px; font-weight: 600; fill: #f3f4f6; }
-        #toggle-skill-view { background: linear-gradient(145deg, rgba(55, 65, 81, 0.6), rgba(31, 41, 55, 0.6)); border: 1px solid rgba(55, 65, 81, 0.4); transition: all 0.3s ease; }
-        #toggle-skill-view:hover { background: linear-gradient(145deg, rgba(75, 85, 99, 0.7), rgba(55, 65, 81, 0.7)); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
-
-        /* --- Mouse Glow Pointer Styles --- */
-        #mouse-glow-pointer {
-            position: fixed; top: -50px; left: -50px; width: 60px; height: 60px;
-            background: radial-gradient(circle, rgba(200, 200, 255, 0.6) 0%, rgba(59, 130, 246, 0.4) 40%, rgba(139, 92, 246, 0.2) 70%, transparent 100%);
-            border-radius: 50%; filter: blur(20px); z-index: 999; pointer-events: none; 
-            transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s ease-out; 
-            animation: mouse-glow-pulse-subtle 2.5s infinite ease-in-out; 
+        .tab-button.active {
+            color: #3b82f6;
+            border-color: #3b82f6;
         }
-        @keyframes mouse-glow-pulse-subtle {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.9; }
+        .tab-button {
+            transition: all 0.2s ease-in-out;
         }
-        /* --- End Mouse Glow Styles --- */
+        [role="tabpanel"] {
+            transition: opacity 300ms ease-in-out;
+        }
+        [role="tabpanel"].hidden {
+            opacity: 0;
+        }
 
+        #skill-graph-container {
+            height: 600px;
+            position: relative;
+        }
+        #skill-graph-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 50;
+            border-radius: 0;
+            padding: 1.5rem;
+            height: 100vh;
+        }
+        #skill-graph {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        #skill-graph:active {
+            cursor: grabbing;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 0 3px #fff); }
+            50% { filter: drop-shadow(0 0 10px #fff); }
+        }
+        .skill-graph-links line {
+            stroke: #6b7280;
+            stroke-opacity: 0.4;
+            transition: stroke-opacity 0.2s ease, stroke-width 0.2s ease;
+        }
+        .skill-graph-nodes circle {
+            stroke: #e5e7eb;
+            stroke-width: 1.5px;
+            cursor: pointer;
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
+        }
+        .skill-graph-nodes circle.level-0-node {
+            animation: pulse-glow 2.5s infinite ease-in-out;
+        }
+        .skill-graph-labels text {
+            fill: #d1d5db;
+            font-size: 10px;
+            font-weight: 500;
+            pointer-events: none;
+            filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.7));
+        }
+        .skill-graph-labels text.level-0 {
+            font-size: 16px;
+            font-weight: 700;
+            fill: #fff;
+            animation: pulse-glow 2.5s infinite ease-in-out;
+        }
+        .skill-graph-labels text.level-1 {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #f3f4f6;
+        }
+        #toggle-skill-view {
+            background: linear-gradient(145deg, rgba(55, 65, 81, 0.6), rgba(31, 41, 55, 0.6));
+            border: 1px solid rgba(55, 65, 81, 0.4);
+            transition: all 0.3s ease;
+        }
+        #toggle-skill-view:hover {
+             background: linear-gradient(145deg, rgba(75, 85, 99, 0.7), rgba(55, 65, 81, 0.7));
+             transform: translateY(-2px);
+             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 <body class="text-gray-300 antialiased">
+    
+    <div id="custom-cursor"></div>
 
-    <div id="mouse-glow-pointer"></div>
-    <canvas id="background-canvas"></canvas> 
+    <canvas id="background-canvas"></canvas>
 
-    <div class="relative z-10"> <section id="hero" class="min-h-screen flex flex-col items-center justify-center text-center p-6">
-             <header class="animate-fade-in-down" style="animation-delay: 0.2s;">
-                 <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-4">
-                     Harshit Kulkarni
-                 </h1>
-                 <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-8">
-                     Data Science Lead - Presentation 📈
-                 </p>
-             </header>
-             <div class="animate-fade-in-up" style="animation-delay: 0.4s;">
-                 <a href="#introduction" 
-                    class="hero-button py-2.5 px-6 font-medium rounded-full shadow-sm text-lg bg-blue-600 hover:bg-blue-700 text-white transition"> 
-                     View My Approach
-                 </a>
-                 <p class="mt-4 text-xs text-gray-500">
-                     Case Study for Data & AI
-                 </p>
-             </div>
+    <div class="relative z-10">
+
+        <section id="hero" class="min-h-screen flex flex-col items-center justify-center text-center p-6">
+            <header class="animate-fade-in-down" style="animation-delay: 0.2s;">
+                <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-4">
+                    Harshit Kulkarni
+                </h1>
+                <p class="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto mb-8">
+                    Data Science Lead - Presentation 📈
+                </p>
+            </header>
+            
+            <div class="animate-fade-in-up" style="animation-delay: 0.4s;">
+                <a href="approach.html" 
+                   id="view-approach-btn"
+                   class="py-3 px-8 bg-blue-600 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-500 transform hover:-translate-y-0.5 transition-all duration-200">
+                    View My Approach
+                </a>
+                <p class="mt-4 text-xs text-gray-500">
+                    Case Study for Data & AI
+                </p>
+            </div>
         </section>
-
-        <section id="introduction" class="max-w-4xl mx-auto px-6 py-16 md:py-24">
-             <h2 class="text-3xl md:text-4xl font-bold text-white mb-8 text-center">
-                 Introduction:
-             </h2>
-             <p class="text-lg text-gray-400 leading-relaxed text-center">
-                 This document outlines my proposal for the Data & AI case study, for which I am applying for the Data Science Lead role. My vision for this position aligns with the described focus on ownership and guiding the technical aspect of the data science function. This proposal addresses how I would approach the key strategic initiatives and responsibilities outlined, particularly focusing on the four key questions provided.
-             </p>
-        </section>
-
-        <section id="skills" class="max-w-6xl mx-auto px-6 py-16 md:py-24">
-             <h2 class="text-3xl md:text-4xl font-bold text-white mb-12 text-center">
-                 Technical Expertise
-             </h2>
-             <div class="text-center mb-8">
-                  <button id="toggle-skill-view" class="p-3 rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50" title="Toggle View">
-                      <svg id="icon-list" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /> </svg>
-                      <svg id="icon-graph" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /> <circle cx="6" cy="19" r="2" stroke-linecap="round" stroke-linejoin="round"/> <circle cx="18" cy="5" r="2" stroke-linecap="round" stroke-linejoin="round"/> <circle cx="6" cy="5" r="2" stroke-linecap="round" stroke-linejoin="round"/> <path d="M14.5 10.5 L18 5"/> <path d="M6 5 L 10 7"/> <path d="M10 12 L 6 19"/> </svg>
-                 </button>
-                  <p id="view-label" class="text-xs text-gray-500 mt-1">Knowledge Graph View</p>
-             </div>
-             <div id="skill-graph-container" class="glass-card rounded-lg p-4 md:p-6 w-full overflow-hidden relative">
-                 <button id="fullscreen-toggle" class="absolute top-4 right-4 z-20 p-2 rounded-lg bg-gray-800 bg-opacity-50 text-gray-300 hover:bg-opacity-75 hover:text-white transition-all" title="Toggle Fullscreen">
-                     <svg id="icon-expand" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M3 8V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2v-2" /> </svg>
-                     <svg id="icon-minimize" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"> <path stroke-linecap="round" stroke-linejoin="round" d="M16 13V5a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2zm-2 2v6a2 2 0 01-2 2H8a2 2 0 01-2-2v-6a2 2 0 012-2h6a2 2 0 012 2z" /> </svg>
-                 </button>
-                 <svg id="skill-graph"></svg>
-             </div>
-             <div id="skill-legend" class="flex flex-wrap justify-center gap-x-6 gap-y-3 mt-8 text-sm"> </div>
-             <div id="skill-grid-view" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> </div>
-        </section>
-
-        <section id="strategy" class="max-w-5xl mx-auto px-6 py-16 md:py-24">
-             <h2 class="text-3xl md:text-4xl font-bold text-white mb-12 text-center"> Strategic Initiatives </h2>
-             <div class="flex justify-center border-b border-gray-700 mb-8 space-x-4 md:space-x-8" role="tablist">
-                 <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 active" data-tab-target="#tab-transition"> Transitioning to AI </button>
-                 <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 text-gray-400 border-transparent" data-tab-target="#tab-value"> Business Value </button>
-                 <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 text-gray-400 border-transparent" data-tab-target="#tab-collaboration"> Collaboration </button>
-                 <button class="tab-button text-sm md:text-base font-medium py-3 px-2 md:px-4 border-b-2 text-gray-400 border-transparent" data-tab-target="#tab-challenges"> Tackling Challenges </button>
-             </div>
-             <div class="mt-8 relative" style="transition: height 300ms ease-in-out;">
-                 
-                 <div id="tab-transition" role="tabpanel" class="space-y-8 absolute w-full">
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">1. Team Upskilling & Knowledge Transfer</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Lead by example, drawing on experience training engineers on LLMs (Claude, Flan-T5, etc.).</li>
-                             <li>We will establish structured knowledge transfer (KT) sessions to build foundational skills in ML, NLU, and Generative AI, just as I did for my previous team.</li>
-                             <li>Everyone should have a fair idea about every application in our team example: PRISM.</li>
-                         </ul>
-                     </div>
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">2. Targeted Technical Implementation</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Lead the design of scalable architectures, similar to the conditional architecture I designed for integrating Claude LLM with an internal chatbot at DBS Bank.</li>
-                             <li>Build upon experience, such as the chatbot integrated into the Digibank app for customer support. An example of documented data transitioning into AI bot.</li>
-                             <li>Focus on optimizing core products like Prism by reducing response time, thinking from a user's perspective (Product Mindset).</li>
-                         </ul>
-                     </div>
-                 </div>
-                 
-                 <div id="tab-value" role="tabpanel" class="hidden space-y-8 absolute w-full">
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">1. Immediate Cost Optimization</h3>
-                         <p class="text-gray-400 mb-4">
-                         Key areas of focus - Cost Optimization, Efficiency Gains, and Performance Enhancement. 
-                        <a href="https://docs.google.com/spreadsheets/d/1104NYzT2YrAkthINzPqJesPxnEh7frx9GCGX1pqOYEo/edit?gid=0#gid=0" class="text-blue-400 hover:text-blue-300 underline">Link to future enhancements</a>
-                        </p>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Prioritize identifying high-cost computational processes.</li>
-                             <li>Example: Migrated an intent training ML model from GPU to CPU to save company costs, demonstrating clear, immediate ROI.</li>
-                             <li>Explore low-cost, high-efficiency models like Gemini-2.5-flash.</li>
-                         </ul>
-                     </div>
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">2. Automation & Efficiency</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Target high-effort, manual tasks for automation.</li>
-                             <li>Example: Built automated Python scripts to analyze system accuracy, reducing manual testing efforts for stakeholders (similar to Prism testing script).</li>
-                         </ul>
-                     </div>
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">3. Core Product & Performance Enhancement</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Improve core user-facing systems, such as taking end-to-end ownership of an NLU neural network pipeline to improve multi-domain accuracy to 86%.</li>
-                             <li>Improve sales questions by getting to the root problems of PRISM and building feasible, efficient solutions.</li>
-                         </ul>
-                     </div>
-                 </div>
-
-                 <div id="tab-collaboration" role="tabpanel" class="hidden space-y-8 absolute w-full">
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">1. Proactive Stakeholder Management</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>I have experience managing stakeholders from different domains to enhance data quality for better LLM performance. I have worked with cross functional domains like - Treasury & Markets, HR, Group procurement and services, Legal compliance services, Investment banking & PE to collab and gather data for our internal chatbot.</li>
-                         </ul>
-                     </div>
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">2. Bringing in Data from stakeholders</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Actively present use cases to secure buy-in, as done when onboarding more business domains at DBS by demonstrating the value of enhanced conversational AI.</li>
-                         </ul>
-                     </div>
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">3. Release Management</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Collaborated with cross-functional teams to establish efficient release management workflows and meet the deadlines before code cut off windows.</li>
-                         </ul>
-                     </div>
-                 </div>
-
-                 <div id="tab-challenges" role="tabpanel" class="hidden space-y-8 absolute w-full">
-                      <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">1. Challenge: Team Upskilling & Adopting New Tech</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Experience training junior engineers and interns on LLMs (Claude, Flan-T5, etc.) and providing structured KT sessions.</li>
-                             <li>Worked with graph database technologies (Neo4j, Cypher), the foundation of KGs, and can train the team on their practical application with brainstorming sessions.</li>
-                         </ul>
-                     </div>
-                     <div class="glass-card p-6 md:p-8 rounded-lg">
-                         <h3 class="text-2xl font-semibold text-white mb-4">2. Challenge: Release Management</h3>
-                         <ul class="list-disc list-outside ml-5 space-y-3 text-gray-400">
-                             <li>Adopt a Clear Branching Strategy: Use a standardized model where new work starts on its own feature branch (e.g., `feature/BIMI-123`).</li>
-                             <li>This provides perfect traceability from a JIRA ticket to the code in Gitlab.</li>
-                             <li>Changes are only merged into dev after a pull request and successful code review, isolating new work and keeping the main branch stable.</li>
-                             <li>Maintaining confluence for all the documentation, example: Application documentation</li>
-                         </ul>
-                     </div>
-                 </div>
-
-             </div>
-        </section>
-
-        <footer class="mt-24 pb-12 text-center text-gray-500 text-sm"> 
-            Thank you 👨‍💻.
-        </footer>
 
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-
-            // --- Mouse position tracking ---
-            let mouse = { x: null, y: null };
-            window.addEventListener('mousemove', (event) => { mouse.x = event.clientX; mouse.y = event.clientY; });
-            window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
             
-            // --- Mouse Glow Pointer Logic ---
-            const mouseGlowPointer = document.getElementById('mouse-glow-pointer');
-            let isMouseOverDocument = false;
-            document.addEventListener('mousemove', (e) => { requestAnimationFrame(() => { mouseGlowPointer.style.left = `${e.clientX}px`; mouseGlowPointer.style.top = `${e.clientY}px`; if (!isMouseOverDocument) { mouseGlowPointer.style.opacity = 0.7; isMouseOverDocument = true; } }); });
-            document.addEventListener('mouseleave', () => { mouseGlowPointer.style.opacity = 0; isMouseOverDocument = false; });
-            // --- End Mouse Glow ---
+            // --- 1. GLOWING CURSOR SCRIPT ---
+            const cursor = document.getElementById('custom-cursor');
+            if (cursor) {
+                // *** FIX: Make cursor visible on load ***
+                cursor.style.opacity = 1; 
+                
+                document.addEventListener('mousemove', (e) => {
+                    cursor.style.left = `${e.clientX}px`;
+                    cursor.style.top = `${e.clientY}px`;
+                });
+                document.addEventListener('mouseleave', () => { cursor.style.opacity = 0; });
+                document.addEventListener('mouseenter', () => { cursor.style.opacity = 1; });
+                document.addEventListener('mouseover', (e) => {
+                    if (e.target.closest('a, button, [role="tablist"] button, .skill-graph-nodes circle')) {
+                        cursor.classList.add('grow');
+                    }
+                });
+                document.addEventListener('mouseout', (e) => {
+                    if (e.target.closest('a, button, [role="tablist"] button, .skill-graph-nodes circle')) {
+                        cursor.classList.remove('grow');
+                    }
+                });
+            }
 
-            // --- Tabs Logic (Unchanged) ---
-            const tabs = document.querySelectorAll('[data-tab-target]'); const tabContents = document.querySelectorAll('[role="tabpanel"]'); const tabContainer = document.querySelector('.mt-8.relative'); let currentTab = tabContents[0];
-            function setInitialTabHeight() { if (currentTab && !currentTab.classList.contains('hidden')) { const iH = currentTab.offsetHeight; tabContainer.style.height = `${iH}px`; } else if (tabs.length > 0) { const fTT = document.querySelector(tabs[0].dataset.tabTarget); if (fTT) { fTT.classList.remove('hidden'); const iH = fTT.offsetHeight; tabContainer.style.height = `${iH}px`; if (!tabs[0].classList.contains('active')) { fTT.classList.add('hidden'); } } } }
-            setTimeout(setInitialTabHeight, 100); 
-            tabs.forEach(tab => { tab.addEventListener('click', () => { const tS = tab.dataset.tabTarget; const target = document.querySelector(tS); if (!target || target === currentTab) return; tabs.forEach(t => { t.classList.remove('active', 'text-blue-500', 'border-blue-500'); t.classList.add('text-gray-400', 'border-transparent'); }); tab.classList.add('active', 'text-blue-500', 'border-blue-500'); tab.classList.remove('text-gray-400', 'border-transparent'); target.classList.remove('hidden'); const nH = target.offsetHeight; currentTab.classList.add('opacity-0'); setTimeout(() => { currentTab.classList.add('hidden'); tabContainer.style.height = `${nH}px`; target.classList.remove('opacity-0'); currentTab = target; }, 300); }); });
-            if (tabs.length > 0) { const aT = document.querySelector('.tab-button.active'); if (aT) { const aTg = document.querySelector(aT.dataset.tabTarget); if (aTg) { tabContents.forEach(p => { if(p !== aTg) { p.classList.add('hidden', 'opacity-0'); } else { p.classList.remove('hidden', 'opacity-0'); } }); currentTab = aTg; requestAnimationFrame(() => { const cH = currentTab.offsetHeight; tabContainer.style.height = `${cH}px`; }); } } else { tabs[0].classList.add('active', 'text-blue-500', 'border-blue-500'); tabs[0].classList.remove('text-gray-400', 'border-transparent'); tabContents[0].classList.remove('hidden', 'opacity-0'); currentTab = tabContents[0]; requestAnimationFrame(() => { const cH = currentTab.offsetHeight; tabContainer.style.height = `${cH}px`; }); } }
-            window.addEventListener('resize', () => { if (currentTab) { requestAnimationFrame(() => { const nH = currentTab.offsetHeight; tabContainer.style.height = `${nH}px`; }); } });
+            // --- 2. PAGE FADE-OUT TRANSITION SCRIPT (UPDATED) ---
+            const viewApproachBtn = document.getElementById('view-approach-btn');
+            if (viewApproachBtn) {
+                viewApproachBtn.addEventListener('click', (e) => {
+                    e.preventDefault(); 
+                    document.body.classList.add('fade-and-zoom-out'); 
+                    setTimeout(() => {
+                        window.location.href = 'approach.html';
+                    }, 500); 
+                });
+            }
 
-            // --- Knowledge Graph Logic (Unchanged) ---
-            const skillData = { name: "Technical Expertise", children: [ { name: "Applied AI & ML", children: ["LLM’s", "SLM’s", "Transformer", "BERT", "Neural Networks", "Regression", "RAG", "Prompt Engineering", "Chunking", "Langchain", "Langgraph", "NLP", "NLU", "SOTA Models", "Agentic AI"] }, { name: "Applied AI Infra", children: ["AWS Bedrock", "CUDA", "Observability", "Grounding"] }, { name: "Databases (Vector/Graph)", children: ["NEO4J", "Elastic Search", "Cypher Query", "Chroma DB", "Pinecone"] }, { name: "Full Stack", children: ["Angular JS", "CSS", "HTML5", "Jboss", "Linux"] }, { name: "Languages & Frameworks", children: ["Python", "Pandas", "Numpy", "Java 8", "Javascript", "Flask", "Django", "Go (Basics)"] }, { name: "Databases (SQL/NoSQL)", children: ["MongoDB", "SQL", "ES", "Dynamodb"] }, { name: "Management & Design", children: ["Tech Management", "Release Management", "ARD/PRD", "LLD / HLD", "Figma", "App Sec"] }, { name: "Cloud Infra", children: ["AWS", "GCP"] } ] };
-            const svg = d3.select("#skill-graph"); const container = document.getElementById("skill-graph-container"); let simulation; let link, node, text; let allNodes = []; let allLinks = []; let zoom; let width, height; const fullscreenButton = document.getElementById('fullscreen-toggle'); const iconExpand = document.getElementById('icon-expand'); const iconMinimize = document.getElementById('icon-minimize');
-            fullscreenButton.addEventListener('click', () => { const isFS = container.classList.toggle('fullscreen'); iconExpand.classList.toggle('hidden', isFS); iconMinimize.classList.toggle('hidden', !isFS); setTimeout(drawGraph, 50); });
-            function drawGraph() { svg.selectAll("*").remove(); width = container.clientWidth; height = container.clientHeight; svg.attr("viewBox", [-width / 2, -height / 2, width, height]); const g = svg.append("g").attr("class", "graph-content"); const zoomed = (event) => { g.attr("transform", event.transform); }; zoom = d3.zoom().scaleExtent([0.1, 8]).on("zoom", zoomed); svg.call(zoom); const nodes = []; const links = []; const categories = []; const mainNode = { id: skillData.name, group: 0, level: 0, fx: 0, fy: 0 }; nodes.push(mainNode); let gI = 1; skillData.children.forEach(cat => { const cN = { id: cat.name, group: gI, level: 1 }; nodes.push(cN); links.push({ source: mainNode.id, target: cat.name }); categories.push({ name: cat.name, group: gI }); cat.children.forEach(skill => { let sN = nodes.find(n => n.id === skill); if (!sN) { sN = { id: skill, group: gI, level: 2 }; nodes.push(sN); } links.push({ source: cat.name, target: skill }); }); gI++; }); allNodes = nodes; allLinks = links; const color = d3.scaleOrdinal(d3.schemeTableau10); simulation = d3.forceSimulation(nodes).force("link", d3.forceLink(links).id(d => d.id).distance(d => d.source.level === 0 ? 180 : 80)).force("charge", d3.forceManyBody().strength(d => d.level === 0 ? -1500 : (d.level === 1 ? -400 : -150))).force("center", d3.forceCenter(0, 0)).force("collide", d3.forceCollide().radius(d => d.level === 2 ? 25 : 30)); link = g.append("g").attr("class", "skill-graph-links").selectAll("line").data(links).join("line"); node = g.append("g").attr("class", "skill-graph-nodes").selectAll("circle").data(nodes).join("circle").attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7)).attr("fill", d => color(d.group)).attr("class", d => d.level === 0 ? "level-0-node" : null).call(drag(simulation)); text = g.append("g").attr("class", "skill-graph-labels").selectAll("text").data(nodes).join("text").text(d => d.id).attr("class", d => `level-${d.level}`).attr("dx", d => d.level === 0 ? 0 : (d.level === 1 ? 16 : 10)).attr("dy", ".35em").attr("text-anchor", d => d.level === 0 ? "middle" : "start"); function unH() { node.style('opacity', 1).attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7)); text.style('opacity', 1).style("font-size", d => d.level === 0 ? "16px" : (d.level === 1 ? "12px" : "10px")).attr("dx", d => d.level === 0 ? 0 : (d.level === 1 ? 16 : 10)); link.style('stroke-opacity', 0.4).style('stroke-width', null); } function hi(d) { if (!d) return unH(); const cN = new Set(); const grp = d.group; allNodes.forEach(n => { if (n.group === grp) cN.add(n.id); }); cN.add(allNodes[0].id); if (d.group === 0) { allNodes.forEach(n => { if (n.level === 1) cN.add(n.id); }); } node.style('opacity', n => cN.has(n.id) ? 1 : 0.1).attr("r", n => cN.has(n.id) ? (n.level === 0 ? 22 : (n.level === 1 ? 15 : 9)) : (n.level === 0 ? 18 : (n.level === 1 ? 12 : 7)) ); text.style('opacity', t => cN.has(t.id) ? 1 : 0.1).style("font-size", t => cN.has(t.id) ? (t.level === 0 ? "20px" : (t.level === 1 ? "15px" : "12px")) : (t.level === 0 ? "16px" : (t.level === 1 ? "12px" : "10px")) ).attr("dx", t => cN.has(t.id) ? (t.level === 0 ? 0 : (t.level === 1 ? 19 : 12)) : (t.level === 0 ? 0 : (t.level === 1 ? 16 : 10)) ); link.style('stroke-opacity', l => (cN.has(l.source.id) && cN.has(l.target.id)) ? 0.7 : 0.05).style('stroke-width', l => (cN.has(l.source.id) && cN.has(l.target.id)) ? '2.5px' : '1px'); } node.on('mouseover.highlight', (e, d) => hi(d)); node.on('mouseout.highlight', () => unH()); simulation.on("tick", () => { link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y); node.attr("cx", d => d.x).attr("cy", d => d.y); text.attr("x", d => d.x).attr("y", d => d.y); }); function drag(sim) { function dS(e, d) { e.sourceEvent.stopPropagation(); if (!e.active) sim.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; } function dD(e, d) { d.fx = e.x; d.fy = e.y; } function dE(e, d) { if (!e.active) sim.alphaTarget(0); if (d.level !== 0) { d.fx = null; d.fy = null; } } return d3.drag().on("start", dS).on("drag", dD).on("end", dE); } const legCont = d3.select("#skill-legend"); legCont.selectAll("*").remove(); const leg = legCont.selectAll(".legend-item").data(categories).join("div").attr("class", "legend-item flex items-center"); leg.append("div").style("width", "12px").style("height", "12px").style("background-color", d => color(d.group)).attr("class", "rounded-full mr-2"); leg.append("span").text(d => d.name).attr("class", "text-gray-400"); }
-            drawGraph(); let rT; window.addEventListener('resize', () => { if (!container.classList.contains('fullscreen')) { clearTimeout(rT); rT = setTimeout(drawGraph, 200); } });
+            // --- 3. JAVASCRIPT FOR TABS (minimal) ---
+            const tabs = document.querySelectorAll('[data-tab-target]');
+            const tabContents = document.querySelectorAll('[role="tabpanel"]');
+            const tabContainer = document.querySelector('.mt-8.relative');
+            let currentTab = tabContents[0];
+            let currentTabHeight = currentTab ? currentTab.offsetHeight : 0;
+            if (tabContainer) tabContainer.style.height = `${currentTabHeight}px`;
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetSelector = tab.dataset.tabTarget;
+                    const target = document.querySelector(targetSelector);
+                    if (!target || target === currentTab) return;
+                    tabs.forEach(t => {
+                        t.classList.remove('active', 'text-blue-500', 'border-blue-500');
+                        t.classList.add('text-gray-400', 'border-transparent');
+                    });
+                    tab.classList.add('active', 'text-blue-500', 'border-blue-500');
+                    tab.classList.remove('text-gray-400', 'border-transparent');
+                    target.classList.remove('hidden');
+                    const newHeight = target.offsetHeight;
+                    currentTab.classList.add('opacity-0');
+                    setTimeout(() => {
+                        currentTab.classList.add('hidden');
+                        tabContainer.style.height = `${newHeight}px`;
+                        target.classList.remove('opacity-0');
+                        currentTab = target;
+                    }, 300);
+                });
+            });
+            if (tabs.length > 0) {
+                tabs[0].classList.add('active', 'text-blue-500', 'border-blue-500');
+                tabs[0].classList.remove('text-gray-400', 'border-transparent');
+                tabContents[0].classList.remove('hidden', 'opacity-0');
+            }
+            window.addEventListener('resize', () => {
+                if (currentTab) {
+                    requestAnimationFrame(() => {
+                        const newHeight = currentTab.offsetHeight;
+                        if(tabContainer) tabContainer.style.height = `${newHeight}px`;
+                    });
+                }
+            });
 
-            // --- Skill View Toggle Logic (Unchanged) ---
-            const toggleBtn = document.getElementById('toggle-skill-view'); const graphView = document.getElementById('skill-graph-container'); const legendView = document.getElementById('skill-legend'); const gridView = document.getElementById('skill-grid-view'); const iconList = document.getElementById('icon-list'); const iconGraph = document.getElementById('icon-graph'); const viewLabel = document.getElementById('view-label'); const gridContainer = document.getElementById("skill-grid-view"); gridContainer.innerHTML = ""; const cSG = d3.scaleOrdinal(d3.schemeTableau10); let gGI = 1; skillData.children.forEach(cat => { const card = document.createElement("div"); card.className = "glass-card p-6 rounded-lg"; const title = document.createElement("h3"); title.className = "text-xl font-semibold text-white mb-4"; title.textContent = cat.name; title.style.color = cSG(gGI); const list = document.createElement("ul"); list.className = "list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm"; cat.children.forEach(skill => { const item = document.createElement("li"); item.textContent = skill; list.appendChild(item); }); card.appendChild(title); card.appendChild(list); gridContainer.appendChild(card); gGI++; }); toggleBtn.addEventListener('click', () => { const iGV = !graphView.classList.contains('hidden'); graphView.classList.toggle('hidden'); legendView.classList.toggle('hidden'); gridView.classList.toggle('hidden'); iconList.classList.toggle('hidden', !iGV); iconGraph.classList.toggle('hidden', iGV); if (iGV) { toggleBtn.title = "Show Graph View"; viewLabel.textContent = "List View"; } else { toggleBtn.title = "Show List View"; viewLabel.textContent = "Knowledge Graph View"; } });
+            // --- 4. JAVASCRIPT FOR KNOWLEDGE GRAPH (minimal) ---
+            const skillData = {
+                name: "Technical Expertise",
+                children: [
+                    { name: "Applied AI & ML", children: ["LLM’s", "SLM’s", "Transformer", "BERT", "Neural Networks", "Regression", "RAG", "Prompt Engineering", "Chunking", "Langchain", "Langgraph", "NLP", "NLU", "SOTA Models", "Agentic AI"] },
+                    { name: "Applied AI Infra", children: ["AWS Bedrock", "CUDA", "Observability", "Grounding"] },
+                    { name: "Databases (Vector/Graph)", children: ["NEO4J", "Elastic Search", "Cypher Query", "Chroma DB", "Pinecone"] },
+                    { name: "Full Stack", children: ["Angular JS", "CSS", "HTML5", "Jboss", "Linux"] },
+                    { name: "Languages & Frameworks", children: ["Python", "Pandas", "Numpy", "Java 8", "Javascript", "Flask", "Django", "Go (Basics)"] },
+                    { name: "Databases (SQL/NoSQL)", children: ["MongoDB", "SQL", "ES", "Dynamodb"] },
+                    { name: "Management & Design", children: ["Tech Management", "Release Management", "ARD/PRD", "LLD / HLD", "Figma", "App Sec"] },
+                    { name: "Cloud Infra", children: ["AWS", "GCP"] }
+                ]
+            };
+            const svg = d3.select("#skill-graph");
+            const container = document.getElementById("skill-graph-container");
+            let simulation, link, node, text, allNodes = [], allLinks = [], zoom, width, height;
+            const fullscreenButton = document.getElementById('fullscreen-toggle');
+            const iconExpand = document.getElementById('icon-expand');
+            const iconMinimize = document.getElementById('icon-minimize');
+            if (fullscreenButton) {
+                fullscreenButton.addEventListener('click', () => {
+                    const isFullscreen = container.classList.toggle('fullscreen');
+                    iconExpand.classList.toggle('hidden', isFullscreen);
+                    iconMinimize.classList.toggle('hidden', !isFullscreen);
+                    setTimeout(drawGraph, 50); 
+                });
+            }
+            function drawGraph() {
+                if (!container) return;
+                svg.selectAll("*").remove();
+                width = container.clientWidth;
+                height = container.clientHeight;
+                svg.attr("viewBox", [-width / 2, -height / 2, width, height]);
+                const g = svg.append("g").attr("class", "graph-content");
+                const zoomed = (event) => g.attr("transform", event.transform);
+                zoom = d3.zoom().scaleExtent([0.1, 8]).on("zoom", zoomed);
+                svg.call(zoom);
+                const nodes = [];
+                const links = [];
+                const categories = [];
+                const mainNode = { id: skillData.name, group: 0, level: 0, fx: 0, fy: 0 }; 
+                nodes.push(mainNode);
+                let groupIndex = 1;
+                skillData.children.forEach(category => {
+                    const catNode = { id: category.name, group: groupIndex, level: 1 };
+                    nodes.push(catNode);
+                    links.push({ source: mainNode.id, target: category.name });
+                    categories.push({ name: category.name, group: groupIndex });
+                    category.children.forEach(skill => {
+                        let skillNode = nodes.find(n => n.id === skill);
+                        if (!skillNode) {
+                            skillNode = { id: skill, group: groupIndex, level: 2 }; 
+                            nodes.push(skillNode);
+                        }
+                        links.push({ source: category.name, target: skill });
+                    });
+                    groupIndex++;
+                });
+                allNodes = nodes;
+                allLinks = links;
+                const color = d3.scaleOrdinal(d3.schemeTableau10);
+                simulation = d3.forceSimulation(nodes)
+                    .force("link", d3.forceLink(links).id(d => d.id).distance(d => d.source.level === 0 ? 180 : 80))
+                    .force("charge", d3.forceManyBody().strength(d => d.level === 0 ? -1500 : (d.level === 1 ? -400 : -150))) 
+                    .force("center", d3.forceCenter(0, 0))
+                    .force("collide", d3.forceCollide().radius(d => d.level === 2 ? 25 : 30)); 
+                link = g.append("g").attr("class", "skill-graph-links").selectAll("line").data(links).join("line");
+                node = g.append("g").attr("class", "skill-graph-nodes").selectAll("circle").data(nodes).join("circle")
+                    .attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7))
+                    .attr("fill", d => color(d.group))
+                    .attr("class", d => d.level === 0 ? "level-0-node" : null)
+                    .call(drag(simulation)); 
+                text = g.append("g").attr("class", "skill-graph-labels").selectAll("text").data(nodes).join("text")
+                    .text(d => d.id)
+                    .attr("class", d => `level-${d.level}`) 
+                    .attr("dx", d => d.level === 0 ? 0 : (d.level === 1 ? 16 : 10))
+                    .attr("dy", ".35em")
+                    .attr("text-anchor", d => d.level === 0 ? "middle" : "start");
+                function unhighlight() {
+                    node.style('opacity', 1).attr("r", d => d.level === 0 ? 18 : (d.level === 1 ? 12 : 7));
+                    text.style('opacity', 1).style("font-size", d => d.level === 0 ? "16px" : (d.level === 1 ? "12px" : "10px")).attr("dx", d => d.level === 0 ? 0 : (d.level === 1 ? 16 : 10));
+                    link.style('stroke-opacity', 0.4).style('stroke-width', null);
+                }
+                function highlight(d) {
+                    if (!d) return unhighlight();
+                    const connectedNodes = new Set();
+                    const group = d.group;
+                    allNodes.forEach(n => { if (n.group === group) connectedNodes.add(n.id); });
+                    connectedNodes.add(allNodes[0].id);
+                    if (d.group === 0) { allNodes.forEach(n => { if (n.level === 1) connectedNodes.add(n.id); }); }
+                    node.style('opacity', n => connectedNodes.has(n.id) ? 1 : 0.1)
+                        .attr("r", n => connectedNodes.has(n.id) ? (n.level === 0 ? 22 : (n.level === 1 ? 15 : 9)) : (n.level === 0 ? 18 : (n.level === 1 ? 12 : 7))); 
+                    text.style('opacity', t => connectedNodes.has(t.id) ? 1 : 0.1)
+                        .style("font-size", t => connectedNodes.has(t.id) ? (t.level === 0 ? "20px" : (t.level === 1 ? "15px" : "12px")) : (t.level === 0 ? "16px" : (t.level === 1 ? "12px" : "10px")))
+                        .attr("dx", t => connectedNodes.has(t.id) ? (t.level === 0 ? 0 : (t.level === 1 ? 19 : 12)) : (t.level === 0 ? 0 : (t.level === 1 ? 16 : 10)));
+                    link.style('stroke-opacity', l => (connectedNodes.has(l.source.id) && connectedNodes.has(l.target.id)) ? 0.7 : 0.05)
+                        .style('stroke-width', l => (connectedNodes.has(l.source.id) && connectedNodes.has(l.target.id)) ? '2.5px' : '1px');
+                }
+                node.on('mouseover.highlight', (event, d) => highlight(d));
+                node.on('mouseout.highlight', () => unhighlight());
+                simulation.on("tick", () => {
+                    link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+                    node.attr("cx", d => d.x).attr("cy", d => d.y);
+                    text.attr("x", d => d.x).attr("y", d => d.y);
+                });
+                function drag(simulation) {
+                    function dragstarted(event, d) { event.sourceEvent.stopPropagation(); if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; }
+                    function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+                    function dragended(event, d) { if (!event.active) simulation.alphaTarget(0); if (d.level !== 0) { d.fx = null; d.fy = null; } }
+                    return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+                }
+                const legendContainer = d3.select("#skill-legend");
+                if (legendContainer.node()) {
+                    legendContainer.selectAll("*").remove(); 
+                    const legend = legendContainer.selectAll(".legend-item").data(categories).join("div").attr("class", "legend-item flex items-center");
+                    legend.append("div").style("width", "12px").style("height", "12px").style("background-color", d => color(d.group)).attr("class", "rounded-full mr-2");
+                    legend.append("span").text(d => d.name).attr("class", "text-gray-400");
+                }
+            }
+            drawGraph();
+            let resizeTimer;
+            window.addEventListener('resize', () => {
+                // *** FIX: Removed flawed check to allow redrawing in fullscreen ***
+                if (container) {
+                    clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(drawGraph, 200); 
+                }
+            });
+
+            // --- 5. JAVASCRIPT FOR SKILL VIEW TOGGLE (minimal) ---
+            const toggleBtn = document.getElementById('toggle-skill-view');
+            const graphView = document.getElementById('skill-graph-container');
+            const legendView = document.getElementById('skill-legend');
+            const gridView = document.getElementById('skill-grid-view');
+            const iconList = document.getElementById('icon-list');
+            const iconGraph = document.getElementById('icon-graph');
+            const viewLabel = document.getElementById('view-label');
+            const gridContainer = document.getElementById("skill-grid-view");
+            if (gridContainer) {
+                gridContainer.innerHTML = "";
+                const color = d3.scaleOrdinal(d3.schemeTableau10);
+                let groupIndex = 1;
+                skillData.children.forEach(category => {
+                    const card = document.createElement("div");
+                    card.className = "glass-card p-6 rounded-lg";
+                    const title = document.createElement("h3");
+                    title.className = "text-xl font-semibold text-white mb-4";
+                    title.textContent = category.name;
+                    title.style.color = color(groupIndex);
+                    const list = document.createElement("ul");
+                    list.className = "list-disc list-outside ml-5 space-y-2 text-gray-400 text-sm";
+                    category.children.forEach(skill => {
+                        const item = document.createElement("li");
+                        item.textContent = skill;
+                        list.appendChild(item);
+                    });
+                    card.appendChild(title);
+                    card.appendChild(list);
+                    gridContainer.appendChild(card);
+                    groupIndex++;
+                });
+            }
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    const isGraphVisible = !graphView.classList.contains('hidden');
+                    graphView.classList.toggle('hidden');
+                    legendView.classList.toggle('hidden');
+                    gridView.classList.toggle('hidden');
+                    iconList.classList.toggle('hidden', !isGraphVisible);
+                    iconGraph.classList.toggle('hidden', isGraphVisible);
+                    if (isGraphVisible) {
+                        toggleBtn.title = "Show Graph View";
+                        viewLabel.textContent = "List View";
+                    } else {
+                        toggleBtn.title = "Show List View";
+                        viewLabel.textContent = "Knowledge Graph View";
+                    }
+                });
+            }
             
-            // --- Interactive Background Canvas Animation Logic ---
-            const canvas = document.getElementById('background-canvas'); const ctx = canvas.getContext('2d'); let time = 0; let stars = []; const numStars = 150; 
-            function initStars() { stars = []; for (let i = 0; i < numStars; i++) { stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, radius: Math.random() * 1.5 + 0.5, baseAlpha: Math.random() * 0.5 + 0.5, alpha: Math.random(), twinkleSpeed: Math.random() * 0.02 + 0.005, xSpeed: (Math.random() - 0.5) * 0.1, ySpeed: Math.random() * 0.2 + 0.1 }); } }
-            function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initStars(); }
-            function drawSineWave(baseFrequency, amplitude, speed, color, opacity, lineWidth, frequencyMultiplier = 1.0) { ctx.beginPath(); ctx.moveTo(0, canvas.height / 2); ctx.strokeStyle = color; ctx.globalAlpha = opacity; ctx.lineWidth = lineWidth; const currentFrequency = baseFrequency * frequencyMultiplier; for (let x = 0; x < canvas.width; x++) { const y = Math.sin(x * currentFrequency + time * speed) * amplitude + canvas.height / 2; ctx.lineTo(x, y); } ctx.stroke(); }
-            function drawStars() { ctx.globalAlpha = 1.0; const iR = 60; stars.forEach(star => { let tA = star.baseAlpha * (Math.sin(time * star.twinkleSpeed) * 0.5 + 0.5); let tR = star.radius; if (mouse.x !== null && mouse.y !== null) { const dx = mouse.x - star.x; const dy = mouse.y - star.y; const dist = Math.sqrt(dx * dx + dy * dy); if (dist < iR) { tA = Math.min(1.0, tA + (1.0 - dist / iR) * 0.5); tR = star.radius + (1.0 - dist / iR) * 1.5; } } star.alpha += (tA - star.alpha) * 0.1; let cR = star.radius + (tR - star.radius) * 0.1; star.x += star.xSpeed; star.y += star.ySpeed; if (star.y > canvas.height + cR) { star.y = -cR; star.x = Math.random() * canvas.width; } else if (star.y < -cR) { star.y = canvas.height + cR; star.x = Math.random() * canvas.width; } if (star.x > canvas.width + cR) { star.x = -cR; star.y = Math.random() * canvas.height; } else if (star.x < -cR) { star.x = canvas.width + cR; star.y = Math.random() * canvas.height; } ctx.beginPath(); ctx.arc(star.x, star.y, cR, 0, Math.PI * 2); ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`; ctx.fill(); }); }
-            function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); let fM = 1.0; if (mouse.y !== null) { fM = 1.5 - (mouse.y / canvas.height); fM = Math.max(0.3, Math.min(1.7, fM)); } drawSineWave(0.003, 100, 0.01, '#3b82f6', 0.35, 2, fM); drawSineWave(0.002, 120, 0.005, '#8b5cf6', 0.2, 2, fM * 0.8); drawSineWave(0.004, 80, 0.015, '#ffffff', 0.15, 1, fM * 1.2); drawSineWave(0.001, 150, 0.002, '#4f46e5', 0.1, 3, fM * 0.5); drawStars(); ctx.globalAlpha = 1.0; time++; requestAnimationFrame(animate); }
+            // --- 6. JAVASCRIPT FOR BACKGROUND CANVAS (Waves & Stars) ---
+            const canvas = document.getElementById('background-canvas');
+            const ctx = canvas.getContext('2d');
+            let time = 0;
+            let stars = [];
+            const numStars = 150;
+            function initStars() {
+                stars = [];
+                for (let i = 0; i < numStars; i++) {
+                    stars.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        radius: Math.random() * 1.5 + 0.5,
+                        baseAlpha: Math.random() * 0.5 + 0.5,
+                        alpha: Math.random(),
+                        twinkleSpeed: Math.random() * 0.02 + 0.005,
+                        xSpeed: (Math.random() - 0.5) * 0.1,
+                        ySpeed: Math.random() * 0.2 + 0.1
+                    });
+                }
+            }
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                initStars();
+            }
+            function drawSineWave(frequency, amplitude, speed, color, opacity, lineWidth) {
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height / 2);
+                ctx.strokeStyle = color;
+                ctx.globalAlpha = opacity;
+                ctx.lineWidth = lineWidth;
+                for (let x = 0; x < canvas.width; x++) {
+                    const y = Math.sin(x * frequency + time * speed) * amplitude + canvas.height / 2;
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            function drawStars() {
+                 ctx.globalAlpha = 1.0; 
+                stars.forEach(star => {
+                    star.alpha = star.baseAlpha * (Math.sin(time * star.twinkleSpeed) * 0.5 + 0.5);
+                    star.x += star.xSpeed; 
+                    star.y += star.ySpeed;
+                    if (star.y > canvas.height + star.radius) { star.y = -star.radius; star.x = Math.random() * canvas.width; }
+                    else if (star.y < -star.radius) { star.y = canvas.height + star.radius; star.x = Math.random() * canvas.width; }
+                    if (star.x > canvas.width + star.radius) { star.x = -star.radius; star.y = Math.random() * canvas.height; }
+                    else if (star.x < -star.radius) { star.x = canvas.width + star.radius; star.y = Math.random() * canvas.height; }
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                    ctx.fill();
+                });
+            }
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawSineWave(0.003, 100, 0.01, '#3b82f6', 0.35, 2);
+                drawSineWave(0.002, 120, 0.005, '#8b5cf6', 0.2, 2);
+                drawSineWave(0.004, 80, 0.015, '#ffffff', 0.15, 1);
+                drawSineWave(0.001, 150, 0.002, '#4f46e5', 0.1, 3);
+                drawStars(); 
+                ctx.globalAlpha = 1.0;
+                time++;
+                requestAnimationFrame(animate);
+            }
             window.addEventListener('resize', resizeCanvas);
-            function initializeBackground() { resizeCanvas(); animate(); }
-            initializeBackground(); 
-            // --- End Background Logic ---
-
-        }); // End DOMContentLoaded
+            resizeCanvas();
+            animate();
+        });
     </script>
 </body>
 </html>
