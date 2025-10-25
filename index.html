@@ -521,6 +521,14 @@
             window.addEventListener('resize', resizeCanvas);
             resizeCanvas();
             animate();
+
+            // --- 7. ADDED: BFCACHE (Back Button) FIX ---
+            // Ensure page is visible when navigating back (using browser back button)
+            window.addEventListener('pageshow', (event) => {
+                document.body.classList.remove('fade-and-zoom-out');
+            });
+            // --- END OF ADDED SECTION ---
+
         });
     </script>
 </body>
